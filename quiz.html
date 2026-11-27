@@ -1,0 +1,744 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="icon" href="favicon.png">
+<meta name="theme-color" content="#0b5d3b">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<title>电动机控制 9 个电路 · 课堂提问模拟</title>
+<style>
+*{box-sizing:border-box}
+body{font-family:"Microsoft YaHei","PingFang SC","Noto Sans CJK SC",sans-serif;margin:0;background:#f3f5f7;color:#111;line-height:1.75}
+header{background:#0b5d3b;color:#fff;padding:20px 18px}
+header h1{margin:0;font-size:23px}
+header p{margin:6px 0 0;opacity:.92;font-size:15px}
+.bar{display:flex;flex-wrap:wrap;gap:8px;padding:12px 14px 0;max-width:1000px;margin:0 auto}
+.bar button,.bar a{font-size:15px;padding:7px 14px;border-radius:20px;border:1px solid #0b5d3b;background:#fff;color:#0b5d3b;text-decoration:none;cursor:pointer}
+.bar button.primary{background:#0b5d3b;color:#fff;border-color:#0b5d3b}
+.toc{display:flex;gap:8px;padding:10px 14px 4px;max-width:1000px;margin:0 auto;flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none}
+.toc::-webkit-scrollbar{display:none}
+.toc a{flex:0 0 auto;font-size:13px;padding:4px 10px;border:1px solid #b9c2c7;background:#fff;border-radius:14px;color:#0b5d3b;text-decoration:none}
+.pick{display:none;max-width:1000px;margin:12px auto 0;padding:0 14px}
+.pick.on{display:block}
+.pick .box{background:#fff8dc;border:2px solid #e6c94a;border-radius:12px;padding:14px 16px}
+.pick .box .from{font-size:13px;color:#8a7400}
+.pick .box .q{font-size:18px;font-weight:bold;margin:4px 0 8px}
+.group{max-width:1000px;margin:14px auto;padding:0 14px}
+.group h2{font-size:19px;margin:14px 0 4px;color:#0b5d3b}
+.group .hint{font-size:14px;color:#666;margin:0 0 10px;background:#eef4f1;border-left:5px solid #0b5d3b;padding:6px 10px;border-radius:4px}
+.group figure{margin:0 0 12px}
+.group figure img{display:block;width:100%;max-width:720px;height:auto;border:1px solid #c9ced3;border-radius:8px;background:#fff;cursor:zoom-in}
+.qa{background:#fff;border:1px solid #c9ced3;border-radius:10px;padding:12px 14px;margin:10px 0}
+.qa .q{font-size:17px;font-weight:bold}
+.qa .q .no{display:inline-block;min-width:30px;color:#0b5d3b}
+.qa details{margin-top:6px}
+.qa summary{display:inline-block;cursor:pointer;font-size:15px;color:#fff;background:#0b5d3b;border-radius:16px;padding:3px 14px;list-style:none;user-select:none}
+.qa summary::-webkit-details-marker{display:none}
+.qa details[open] summary{background:#9aa5ab}
+.qa .a{margin:10px 0 0;padding:10px 12px;background:#fff8dc;border-left:5px solid #e6c94a;border-radius:6px;font-size:16px}
+.qa .tip{margin:8px 0 0;font-size:14px;color:#555}
+.qa .tip b{color:#0b5d3b}
+.picksum{display:inline-block;cursor:pointer;font-size:15px;color:#fff;background:#0b5d3b;border-radius:16px;padding:3px 14px;list-style:none;user-select:none}
+.picksum::-webkit-details-marker{display:none}
+#pick-a-box[open] .picksum{background:#9aa5ab}
+#pick-a-box .a{margin:10px 0 0;padding:10px 12px;background:#fff;border-left:5px solid #e6c94a;border-radius:6px;font-size:16px}
+#pick-a-box .tip{margin:8px 0 0;font-size:14px;color:#555}
+#pick-a-box .tip:empty{display:none}
+.pick .again{margin-top:10px;font-size:14px;padding:5px 12px;border-radius:16px;border:1px solid #8a7400;background:#fff;color:#6a5a00;cursor:pointer}
+#zoom{position:fixed;inset:0;background:rgba(0,0,0,.96);display:none;z-index:50;align-items:center;justify-content:center;cursor:zoom-out;padding:12px}
+#zoom.on{display:flex}
+#zoom img{max-width:100%;max-height:calc(100vh - 60px);width:auto;height:auto;background:#fff;border:2px solid #fff;border-radius:4px;object-fit:contain}
+#zoom.hint::after{content:"点一下任意位置关闭";position:fixed;left:0;right:0;bottom:18px;text-align:center;color:#fff;font-size:15px}
+footer{max-width:1000px;margin:14px auto 30px;padding:0 14px;font-size:13px;color:#666}
+@media (max-width:860px){
+  header h1{font-size:20px}
+  .qa .q{font-size:16px}
+  .qa .a{font-size:15px}
+}
+@media print{
+  @page{size:A4 portrait;margin:12mm 11mm}
+  body{background:#fff;line-height:1.5}
+  header{background:#fff;color:#000;padding:0 0 6px;border-bottom:3px solid #0b5d3b}
+  header p{color:#333;margin:4px 0 0;font-size:11px}
+  header h1{font-size:18px}
+  .bar,.toc,#zoom,.pick{display:none}
+  .group{max-width:none;margin:0;padding:0;page-break-before:always}
+  /* .pick is a section too, so "first of its type" never matched a group: use the id of the first one */
+  #gwarmup{page-break-before:auto}
+  .group h2{font-size:15px;margin:6px 0 4px;page-break-after:avoid}
+  .group .hint{font-size:10.5px;padding:4px 8px;page-break-after:avoid}
+  /* the picture stays on paper: several questions say "point it out on the diagram" */
+  .group figure{margin:4px 0 8px;break-inside:avoid;page-break-after:avoid}
+  .group figure img{width:74%;max-width:none;border:0;cursor:auto}
+  .qa{border:0;border-top:1px solid #bbb;border-radius:0;padding:6px 0 4px;margin:0;break-inside:avoid}
+  .qa .q{font-size:11.5px}
+  .qa summary{display:none}
+  .qa .a{font-size:11px;padding:5px 9px;margin-top:4px;line-height:1.5}
+  .qa .tip{font-size:10.5px;margin-top:3px}
+}
+</style>
+</head>
+<body>
+<header><h1>电动机控制 9 个电路 · 课堂提问模拟</h1><p>按老师上课的问法出的题。先自己开口答，再点开看参考答案。　共 12 组 69 题。</p></header>
+<div class="bar">
+<button type="button" class="primary" id="draw">🎲 老师点名：随机抽一题</button>
+<button type="button" id="all-answers" data-open="0">展开全部答案</button>
+<a href="story.html">去看图文讲解</a>
+<a href="index.html">点读版</a>
+</div>
+<section class="pick" id="pick">
+<div class="box">
+<div class="from" id="pick-from"></div>
+<div class="q" id="pick-q"></div>
+<details id="pick-a-box"><summary class="picksum">看参考答案</summary>
+<div class="a" id="pick-a"></div>
+<div class="tip" id="pick-tip"></div>
+</details>
+<button type="button" class="again" id="again">再抽一题</button>
+</div>
+</section>
+<nav class="toc">
+<a href="#gwarmup">一、开场热身（7）</a>
+<a href="#gc01">二、01 有过载保护的正转控制（5）</a>
+<a href="#gc02">三、02 双重互锁正反转控制（6）</a>
+<a href="#gc03">四、03 工作台自动往返（5）</a>
+<a href="#gc04">五、04 自耦变压器降压启动（6）</a>
+<a href="#gc05">六、05 按钮切换的 Y—△ 降压启动（6）</a>
+<a href="#gc06">七、06 时间继电器 Y—△ 降压启动（5）</a>
+<a href="#gc07">八、07 机械制动（5）</a>
+<a href="#gc08">九、08 反接制动（6）</a>
+<a href="#gc09">十、09 能耗制动（6）</a>
+<a href="#gcompare">十一、对比题（6）</a>
+<a href="#gfault">十二、故障判断题（6）</a>
+</nav>
+<section class="group" id="gwarmup">
+<h2>一、开场热身（概念题，必须张口就来）</h2>
+<p class="hint">老师一上课常先点几个名词，答不准后面就悬了。</p>
+<div class="qa">
+<div class="q"><span class="no">1.</span>什么是自锁？</div>
+<details>
+<summary>看参考答案</summary>
+<div class="a">接触器通电吸合后，用它自己的辅助常开触点并联在启动按钮两端，松开按钮后线圈仍然通电，接触器保持吸合。这叫自锁。</div>
+<div class="tip"><b>老师可能追问：</b>自锁触点是常开还是常闭？→ 常开（动合）。接在哪里？→ 并联在启动按钮两端。</div>
+</details>
+</div>
+<div class="qa">
+<div class="q"><span class="no">2.</span>什么是互锁？为什么要互锁？</div>
+<details>
+<summary>看参考答案</summary>
+<div class="a">把对方接触器的常闭触点串联在本方线圈的回路里，对方吸合时本方就吸不上。目的是防止两个接触器同时吸合造成电源相间短路。</div>
+<div class="tip"><b>老师可能追问：</b>互锁触点是常开还是常闭？→ 常闭（动断）。接在哪里？→ 串联在对方线圈的回路里（KM1 的常闭串在 KM2 线圈回路里，反过来也一样）。一句话：自锁并联、互锁串联。</div>
+</details>
+</div>
+<div class="qa">
+<div class="q"><span class="no">3.</span>什么叫双重互锁？</div>
+<details>
+<summary>看参考答案</summary>
+<div class="a">接触器互锁加按钮互锁。接触器互锁是用对方接触器的常闭触点；按钮互锁是用复合按钮，按下时它的常闭触点先断开对方的回路。</div>
+</details>
+</div>
+<div class="qa">
+<div class="q"><span class="no">4.</span>热继电器在电路里起什么作用？它的两部分分别接在哪里？</div>
+<details>
+<summary>看参考答案</summary>
+<div class="a">做过载保护。热元件串在主电路里感受电机电流；它的常闭触点串在控制电路里，过载时断开，切断控制回路使电机停。</div>
+<div class="tip"><b>老师可能追问：</b>为什么不用熔断器做过载保护？→ 熔断器管短路，过载电流小、发热慢，熔断器来不及动作；热继电器是靠热积累动作的。</div>
+</details>
+</div>
+<div class="qa">
+<div class="q"><span class="no">5.</span>动断先断、动合后合是什么意思？</div>
+<details>
+<summary>看参考答案</summary>
+<div class="a">复合按钮、行程开关动作时，常闭触点先断开，常开触点后闭合。所以用它切换时，一定是先切断一路，再接通另一路，两路不会同时接通。</div>
+</details>
+</div>
+<div class="qa">
+<div class="q"><span class="no">6.</span>电动机怎样才能反转？</div>
+<details>
+<summary>看参考答案</summary>
+<div class="a">任意对调两根电源线（改变相序），旋转磁场方向反过来，电机就反转。</div>
+<div class="tip"><b>老师可能追问：</b>三根都换行不行？→ 三根按顺序换相序不变，方向不变。只能换其中两根。</div>
+</details>
+</div>
+<div class="qa">
+<div class="q"><span class="no">7.</span>接触器的主触点和辅助触点有什么区别？</div>
+<details>
+<summary>看参考答案</summary>
+<div class="a">主触点串在主电路里，负责给电机送电，能通过大电流，三对同时动作；辅助触点用在控制电路里，电流小，做自锁、互锁、接指示灯。</div>
+</details>
+</div>
+</section>
+<section class="group" id="gc01">
+<h2>二、01 有过载保护的正转控制</h2>
+<p class="hint">这是基础，老师一定问，而且会问“为什么”。</p>
+<figure>
+<img src="img/a01.png" alt="二、01 有过载保护的正转控制 电路图">
+</figure>
+<div class="qa">
+<div class="q"><span class="no">1.</span>合上 QS，按下 SB2，电机不转。你先查哪里？</div>
+<details>
+<summary>看参考答案</summary>
+<div class="a">先看接触器有没有吸合（听声音、看有没有动作）。吸合了说明控制回路通，问题在主电路（熔断器、主触点、电机线）；不吸合说明控制回路有断点，从熔断器、FR 常闭、SB1、SB2、互锁触点到线圈逐个查。</div>
+<div class="tip"><b>老师可能追问：</b>答题套路：先看接触器吸不吸，把故障分成“控制回路”和“主电路”两半。</div>
+</details>
+</div>
+<div class="qa">
+<div class="q"><span class="no">2.</span>自锁触点为什么一定要并联在 SB2 两端？如果并联在 SB1 两端会怎样？</div>
+<details>
+<summary>看参考答案</summary>
+<div class="a">并在 SB2 两端，松手后电流绕过的只是启动按钮，停止按钮 SB1 和热继电器 FR 仍然串在回路里，照样能停。如果并在 SB1 两端，SB1 被短接，按停止按钮没反应，停不下来。</div>
+</details>
+</div>
+<div class="qa">
+<div class="q"><span class="no">3.</span>按下 SB2 电机转，一松手就停。是什么原因？</div>
+<details>
+<summary>看参考答案</summary>
+<div class="a">自锁回路断了，松手后没有电流保持。可能是自锁触点接触不良、自锁触点的接线松了或接错位置，也可能是 SB2 和自锁触点没有真正并联。</div>
+<div class="tip"><b>老师可能追问：</b>一句话记：松手就停 = 没有自锁。</div>
+</details>
+</div>
+<div class="qa">
+<div class="q"><span class="no">4.</span>按下 SB1 电机不停，可能是什么原因？</div>
+<details>
+<summary>看参考答案</summary>
+<div class="a">停止按钮 SB1 两端被短接了（比如自锁触点错并在 SB1 上），或者 SB1 常闭触点粘连断不开，或者接触器铁芯有油污粘住不释放，或者主触点焊死。</div>
+</details>
+</div>
+<div class="qa">
+<div class="q"><span class="no">5.</span>电机运行中自己停了，再按 SB2 启动不了。怎么回事？</div>
+<details>
+<summary>看参考答案</summary>
+<div class="a">多半是热继电器动作了（电机过载）。FR 的常闭触点断开后控制回路断，要等热继电器冷却并手动复位后才能再启动。应该先查电机为什么过载，不要急着复位。</div>
+<div class="tip"><b>老师可能追问：</b>FR 动作后能不能马上按复位再开？→ 不行，要先找过载原因（机械卡住、负载太重、缺相）。</div>
+</details>
+</div>
+</section>
+<section class="group" id="gc02">
+<h2>三、02 双重互锁正反转控制</h2>
+<p class="hint">老师最爱在这里问“两把锁分别在哪里”。注意按钮编号：电路图上 SB3 停止、SB1 正转、SB2 反转；软件旁白里是 SB1 停止、SB2 正转、SB3 反转。答题按功能说最保险。</p>
+<figure>
+<img src="img/a02.png" alt="三、02 双重互锁正反转控制 电路图">
+</figure>
+<div class="qa">
+<div class="q"><span class="no">1.</span>这个电路里的两把互锁分别在哪里？到图上指出来。</div>
+<details>
+<summary>看参考答案</summary>
+<div class="a">第一把，接触器互锁：KM2 的常闭触点串在 KM1 线圈回路里，KM1 的常闭触点串在 KM2 线圈回路里。第二把，按钮互锁：正转启动按钮的常闭触点串在反转回路里，反转启动按钮的常闭触点串在正转回路里。</div>
+<div class="tip"><b>老师可能追问：</b>到图上指：左支路最上面那个常闭触点（编号④）是反转按钮的常闭；编号⑦是 KM2 的常闭。</div>
+</details>
+</div>
+<div class="qa">
+<div class="q"><span class="no">2.</span>已经有接触器互锁了，为什么还要按钮互锁？</div>
+<details>
+<summary>看参考答案</summary>
+<div class="a">按钮互锁让操作更直接：按下反转按钮时，它的常闭触点先把正转回路断开，不用先按停止就能直接换向。同时两把锁互为备用，一把失灵另一把还起作用，更安全。</div>
+</details>
+</div>
+<div class="qa">
+<div class="q"><span class="no">3.</span>如果 KM1 和 KM2 同时吸合，会发生什么？</div>
+<details>
+<summary>看参考答案</summary>
+<div class="a">KM2 的主触点把两相对调过，同时吸合等于把两根相线直接连在一起，造成电源相间短路，烧触点、烧熔断器，严重的会烧坏线路。</div>
+</details>
+</div>
+<div class="qa">
+<div class="q"><span class="no">4.</span>正转运行中直接按反转按钮，电路是怎么动作的？</div>
+<details>
+<summary>看参考答案</summary>
+<div class="a">反转按钮的常闭触点先断开正转回路，KM1 释放，KM1 的常闭触点复位；然后反转按钮的常开触点闭合，接通反转回路，KM2 吸合自锁，电机反转。</div>
+<div class="tip"><b>老师可能追问：</b>KM1 还没完全释放时 KM2 能吸吗？→ 不能，KM1 的常闭触点没复位，KM2 回路是断的。</div>
+</details>
+</div>
+<div class="qa">
+<div class="q"><span class="no">5.</span>按下正转按钮电机正转，按下反转按钮没反应。可能是什么原因？</div>
+<details>
+<summary>看参考答案</summary>
+<div class="a">查反转支路：正转按钮的常闭触点（按钮互锁）接触不良；KM1 的常闭触点（接触器互锁）断了或接触不良；反转按钮常开触点坏；KM2 线圈断线。</div>
+<div class="tip"><b>老师可能追问：</b>答题套路：反转回路里串了什么，就按顺序查什么。</div>
+</details>
+</div>
+<div class="qa">
+<div class="q"><span class="no">6.</span>主电路里 KM2 的出线为什么有两根是交叉的？</div>
+<details>
+<summary>看参考答案</summary>
+<div class="a">交叉就是对调两相。KM1 按原来相序接过去是正转；KM2 把两相对调，相序反了，电机就反转。</div>
+</details>
+</div>
+</section>
+<section class="group" id="gc03">
+<h2>四、03 工作台自动往返（行程控制）</h2>
+<p class="hint">核心是“一个行程开关的两对触点拆开放在两个支路里”。</p>
+<figure>
+<img src="img/a03.png" alt="四、03 工作台自动往返（行程控制） 电路图">
+</figure>
+<div class="qa">
+<div class="q"><span class="no">1.</span>工作台走到头是怎么自动换向的？拿 SQ2 说一遍。</div>
+<details>
+<summary>看参考答案</summary>
+<div class="a">工作台向右走，到头撞到 SQ2。SQ2 的常闭触点串在正转（KM1）回路里，先断开，KM1 失电，电机停。SQ2 的常开触点并在反转（KM2）回路的启动按钮上，后闭合，接通 KM2，电机反转，工作台往回走。</div>
+</details>
+</div>
+<div class="qa">
+<div class="q"><span class="no">2.</span>同一个行程开关的两对触点为什么不放在一起？</div>
+<details>
+<summary>看参考答案</summary>
+<div class="a">换向时要“停这边、起对面”：常闭触点要断开自己这一边，常开触点要接通对面那一边，所以必须分放在两个支路里。放在一起就做不到一边停一边起。</div>
+</details>
+</div>
+<div class="qa">
+<div class="q"><span class="no">3.</span>SQ3、SQ4 起什么作用？</div>
+<details>
+<summary>看参考答案</summary>
+<div class="a">极限保护（终端保护）。万一 SQ1、SQ2 失灵不动作，工作台冲过头，撞上 SQ3 或 SQ4，把回路硬断开，防止工作台越位出事故。</div>
+<div class="tip"><b>老师可能追问：</b>它们用的是常开还是常闭？→ 常闭，串联在本方回路里。</div>
+</details>
+</div>
+<div class="qa">
+<div class="q"><span class="no">4.</span>工作台到了位置不停也不返回，是什么原因？</div>
+<details>
+<summary>看参考答案</summary>
+<div class="a">对应的行程开关坏了（常闭触点断不开，或常开触点合不上），或者撞块没对准、没碰到开关。最后会由 SQ3/SQ4 断开起保护作用。</div>
+</details>
+</div>
+<div class="qa">
+<div class="q"><span class="no">5.</span>停止按钮后面的那根横线是干什么的？</div>
+<details>
+<summary>看参考答案</summary>
+<div class="a">它是控制回路的分支点，把电同时分给左右两支。每一支里有三个并联的常开触点：启动按钮、本方接触器的自锁触点、对方那头的行程开关常开。任何一个闭合都能让这一支得电。</div>
+<div class="tip"><b>老师可能追问：</b>到图上指：编号②那根横线。</div>
+</details>
+</div>
+</section>
+<section class="group" id="gc04">
+<h2>五、04 自耦变压器降压启动</h2>
+<p class="hint">三个新器件：KT（到时间才动作）、KA（传令兵）、HL（指示灯）。</p>
+<figure>
+<img src="img/a04.png" alt="五、04 自耦变压器降压启动 电路图">
+</figure>
+<div class="qa">
+<div class="q"><span class="no">1.</span>为什么要降压启动？自耦变压器怎么让电压降下来？</div>
+<details>
+<summary>看参考答案</summary>
+<div class="a">较大容量的电机直接启动，启动电流太大，会影响电网和其他设备。自耦变压器启动时串在电源和电机之间，电机从抽头拿到的是低于电源的电压，启动电流就小了。启动完再把它撤掉，让电机直接接电源全压运行。</div>
+</details>
+</div>
+<div class="qa">
+<div class="q"><span class="no">2.</span>从按下启动按钮到全压运行，说一遍全过程。</div>
+<details>
+<summary>看参考答案</summary>
+<div class="a">合上 QS，HL1 亮。按 SB2，KM1 吸合自锁，变压器接入，电机降压启动，同时 KT 开始计时，HL2 亮。时间到，KT 的延时闭合触点闭合，KA 吸合并自锁。KA 的常闭触点断开 KM1，变压器退出，HL2 灭；KA 的常开触点经 KM1 常闭触点接通 KM2，电机全压运行，HL3 亮。</div>
+<div class="tip"><b>老师可能追问：</b>顺序口诀：KM1 上 → KT 计时 → KA 切换 → KM1 下、KM2 上。</div>
+</details>
+</div>
+<div class="qa">
+<div class="q"><span class="no">3.</span>KT 的线圈为什么接在 KM1 自锁触点的下面？</div>
+<details>
+<summary>看参考答案</summary>
+<div class="a">这样 KT 只有在 KM1 已经吸合（也就是已经启动了）以后才得电开始计时。如果直接接在停止按钮后面，一合上电源就开始计时，还没启动就先到时间了。</div>
+</details>
+</div>
+<div class="qa">
+<div class="q"><span class="no">4.</span>KA 常开触点后面为什么串一个 KM1 的常闭触点再去接 KM2？</div>
+<details>
+<summary>看参考答案</summary>
+<div class="a">保证 KM1 先释放，KM2 才能吸合。KM1 和 KM2 不能同时吸合，否则电源经 KM2 和变压器会短路。串了 KM1 的常闭触点，KM1 没断开，KM2 就吸不上。</div>
+</details>
+</div>
+<div class="qa">
+<div class="q"><span class="no">5.</span>三个指示灯分别表示什么？</div>
+<details>
+<summary>看参考答案</summary>
+<div class="a">HL1 是电源指示，有电就亮；HL2 是降压启动指示，KM1 吸合时亮；HL3 是全压运行指示，KM2 吸合时亮。</div>
+</details>
+</div>
+<div class="qa">
+<div class="q"><span class="no">6.</span>按下 SB2，电机一直低压转，切换不到全压。查哪里？</div>
+<details>
+<summary>看参考答案</summary>
+<div class="a">切换靠 KT 到时间接通 KA。查 KT 线圈有没有得电、整定时间对不对、KT 延时触点能不能闭合、KA 线圈好不好、KA 常开触点和 KM1 常闭触点通不通。</div>
+<div class="tip"><b>老师可能追问：</b>看指示灯辅助判断：HL2 一直亮、HL3 不亮，就是 KM1 没退。再量 KA 线圈两端的电压：有电压 KA 不吸，是 KA 线圈坏；没电压，是 KT 的延时触点没闭合（KT 没得电或时间没到）。</div>
+</details>
+</div>
+</section>
+<section class="group" id="gc05">
+<h2>六、05 按钮切换的 Y—△ 降压启动</h2>
+<p class="hint">按钮编号：电路图上 SB3 停止、SB1 启动、SB2 切换；软件旁白里是 SB1 停止、SB2 启动、SB3 切换。按功能说。</p>
+<figure>
+<img src="img/a05.png" alt="六、05 按钮切换的 Y—△ 降压启动 电路图">
+</figure>
+<div class="qa">
+<div class="q"><span class="no">1.</span>星形启动为什么能减小启动电流？减小到多少？</div>
+<details>
+<summary>看参考答案</summary>
+<div class="a">星形接法时每相绕组承受的电压是线电压的 1/√3（380V 变成 220V）。启动电流和启动转矩都降到直接启动的 1/3。</div>
+<div class="tip"><b>老师可能追问：</b>启动转矩也变小了，所以只适合什么负载？→ 轻载或空载启动。</div>
+</details>
+</div>
+<div class="qa">
+<div class="q"><span class="no">2.</span>Y—△ 启动适用于什么样的电动机？</div>
+<details>
+<summary>看参考答案</summary>
+<div class="a">只适用于正常运行时是三角形接法的电动机，而且要有 6 个出线端（U1 V1 W1 U2 V2 W2）。</div>
+<div class="tip"><b>老师可能追问：</b>为什么？→ 启动时接成星形，运行时要能接回三角形，绕组额定电压必须等于线电压 380V。</div>
+</details>
+</div>
+<div class="qa">
+<div class="q"><span class="no">3.</span>三个接触器各自管什么？</div>
+<details>
+<summary>看参考答案</summary>
+<div class="a">KM 是电源接触器，把三相电源接到 U1 V1 W1，从启动到运行一直吸合。KMY 是星形接触器，把 U2 V2 W2 三个端子短接，电机接成星形。KM△ 是三角形接触器，把 U2 V2 W2 分别接到 W1 U1 V1，电机接成三角形。</div>
+</details>
+</div>
+<div class="qa">
+<div class="q"><span class="no">4.</span>KMY 和 KM△ 为什么必须互锁？</div>
+<details>
+<summary>看参考答案</summary>
+<div class="a">如果同时吸合，U2 V2 W2 被短接的同时又接到了电源上，等于把电源短路。所以 KMY 的常闭串在 KM△ 回路里，KM△ 的常闭串在 KMY 回路里。</div>
+</details>
+</div>
+<div class="qa">
+<div class="q"><span class="no">5.</span>切换按钮 SB2 按下去，电路怎么动作？</div>
+<details>
+<summary>看参考答案</summary>
+<div class="a">SB2 是复合按钮。按下去，它的常闭触点先断开 KMY 回路，KMY 释放，电机脱离星形。然后它的常开触点闭合，接通 KM△，KM△ 吸合并自锁，电机接成三角形全压运行。KM△ 吸合后它的常闭触点断开 KMY 回路，形成互锁。</div>
+</details>
+</div>
+<div class="qa">
+<div class="q"><span class="no">6.</span>按下切换按钮后电机停了，不转了。为什么？</div>
+<details>
+<summary>看参考答案</summary>
+<div class="a">SB2 的常闭已经把 KMY 断开，电机脱离了星形，但 KM△ 没吸合，电机就没电了。查 KMY 的常闭互锁触点复位没有、SB2 常开触点合没合上、KM△ 回路有没有断点、KM△ 线圈好不好。</div>
+<div class="tip"><b>老师可能追问：</b>一句话记：切换时停 = 星形断了、三角形没接上。</div>
+</details>
+</div>
+</section>
+<section class="group" id="gc06">
+<h2>七、06 时间继电器 Y—△ 降压启动</h2>
+<p class="hint">和 05 只差一点：把切换按钮换成时间继电器。按钮编号：电路图上 SB 停止、SB1 启动；旁白里是 SB1 停止、SB2 启动。</p>
+<figure>
+<img src="img/a06.png" alt="七、06 时间继电器 Y—△ 降压启动 电路图">
+</figure>
+<div class="qa">
+<div class="q"><span class="no">1.</span>这个电路和按钮切换的那个有什么区别？</div>
+<details>
+<summary>看参考答案</summary>
+<div class="a">主电路完全一样。区别在控制回路：没有切换按钮，改由时间继电器 KT 自动完成。KT 的延时断开常闭触点串在 KMY 回路里，KT 的延时闭合常开触点串在 KM△ 回路里。</div>
+</details>
+</div>
+<div class="qa">
+<div class="q"><span class="no">2.</span>时间继电器是哪两对触点？各接在哪里？</div>
+<details>
+<summary>看参考答案</summary>
+<div class="a">一对是延时断开的常闭触点，串在 KMY 线圈回路里，时间到它断开，KMY 失电。另一对是延时闭合的常开触点，串在 KM△ 线圈回路里，时间到它闭合，KM△ 得电。</div>
+</details>
+</div>
+<div class="qa">
+<div class="q"><span class="no">3.</span>为什么能保证先断开星形、再接通三角形？</div>
+<details>
+<summary>看参考答案</summary>
+<div class="a">因为断 KMY 和通 KM△ 用的是同一个时间继电器的两对触点，它们同时动作。而且 KM△ 回路里还串了 KMY 的常闭互锁触点，KMY 没释放，KM△ 就吸不上。</div>
+</details>
+</div>
+<div class="qa">
+<div class="q"><span class="no">4.</span>KT 线圈接在哪里？什么时候开始计时？什么时候停止？</div>
+<details>
+<summary>看参考答案</summary>
+<div class="a">KT 线圈接在 KM△ 常闭触点下面那个节点。按下启动按钮，KM 吸合自锁后 KT 就得电开始计时。KM△ 吸合后，它的常闭触点断开 KT 线圈，KT 停止工作。</div>
+</details>
+</div>
+<div class="qa">
+<div class="q"><span class="no">5.</span>时间到了，电机还是星形接法在转。什么原因？</div>
+<details>
+<summary>看参考答案</summary>
+<div class="a">KT 的延时触点没动作（KT 线圈没得电、整定时间不对、触点坏），或者 KM△ 回路断了（KMY 常闭触点没复位、KM△ 线圈断线）。</div>
+</details>
+</div>
+</section>
+<section class="group" id="gc07">
+<h2>八、07 机械制动（电磁抱闸）</h2>
+<p class="hint">这题的核心是那一根蓝线：抱闸线圈接在哪里。</p>
+<figure>
+<img src="img/a07.png" alt="八、07 机械制动（电磁抱闸） 电路图">
+</figure>
+<div class="qa">
+<div class="q"><span class="no">1.</span>电磁抱闸由哪些部分组成？怎么动作？</div>
+<details>
+<summary>看参考答案</summary>
+<div class="a">电磁线圈、衔铁、杠杆、弹簧、闸瓦、闸轮。线圈通电，吸住衔铁，带动杠杆把闸瓦抬起，离开闸轮，电机能转。线圈断电，弹簧把闸瓦压紧在闸轮上，电机立即停住。</div>
+</details>
+</div>
+<div class="qa">
+<div class="q"><span class="no">2.</span>抱闸线圈接在哪里？为什么一定要接在那里？</div>
+<details>
+<summary>看参考答案</summary>
+<div class="a">并接在电机的两根相线上（V、W），而且要接在 KM 主触点的后面，靠电机这一侧。这样 KM 一吸合，电机有电的同时抱闸线圈也有电，松闸；KM 一断，电机和抱闸同时没电，闸瓦抱紧。</div>
+</details>
+</div>
+<div class="qa">
+<div class="q"><span class="no">3.</span>如果抱闸线圈接在 KM 主触点的前面（电源侧）会怎样？</div>
+<details>
+<summary>看参考答案</summary>
+<div class="a">合上电源开关，抱闸就松开了，电机还没启动刹车已经松开。更危险的是：这时的抱闸线圈和 KM 没有关系，KM 断开以后它并不能保证跟着断电，就做不到“电机没电必抱闸”。接在 KM 后面，才能保证电机有电才松闸、没电就抱闸。</div>
+</details>
+</div>
+<div class="qa">
+<div class="q"><span class="no">4.</span>这种制动方式叫什么类型？有什么好处？</div>
+<details>
+<summary>看参考答案</summary>
+<div class="a">断电制动型。好处是停电、断线时闸瓦自动抱紧，能保持住位置，安全。比如起重设备，停电时重物不会掉下来。</div>
+</details>
+</div>
+<div class="qa">
+<div class="q"><span class="no">5.</span>电机能启动，但一启动就嗡嗡响、转不起来或者很慢。查什么？</div>
+<details>
+<summary>看参考答案</summary>
+<div class="a">先查抱闸：线圈有没有得电（接线松、线圈断）、线圈电压对不对、衔铁有没有卡住、闸瓦和闸轮之间有没有脏东西。抱闸没松开，电机带着刹车转，会过载发热甚至烧坏。</div>
+<div class="tip"><b>老师可能追问：</b>一句话记：电机转不动、发闷，先看刹车松没松。</div>
+</details>
+</div>
+</section>
+<section class="group" id="gc08">
+<h2>九、08 反接制动（速度继电器控制）</h2>
+<p class="hint">三个关键词：复合按钮、速度继电器、限流电阻。</p>
+<figure>
+<img src="img/a08.png" alt="九、08 反接制动（速度继电器控制） 电路图">
+</figure>
+<div class="qa">
+<div class="q"><span class="no">1.</span>什么是反接制动？</div>
+<details>
+<summary>看参考答案</summary>
+<div class="a">电机停机时，立即对调两根电源线，让电机产生和原来转向相反的旋转磁场，对转子产生制动力矩，使电机很快停下来。</div>
+</details>
+</div>
+<div class="qa">
+<div class="q"><span class="no">2.</span>反接制动为什么必须用速度继电器？</div>
+<details>
+<summary>看参考答案</summary>
+<div class="a">转速降到接近零时如果还通着反接电源，电机就会反着转起来。速度继电器 SR 和电机轴连在一起，转速高于每分钟 120 转时常开触点闭合，低于 120 转时自动断开，切断反接电源，让制动在转速接近零时自动结束。</div>
+</details>
+</div>
+<div class="qa">
+<div class="q"><span class="no">3.</span>KM2 的主电路里为什么每相都串一个电阻？</div>
+<details>
+<summary>看参考答案</summary>
+<div class="a">反接时转子转向和旋转磁场方向相反，相对速度接近两倍同步转速，定子电流非常大。串电阻是为了限制这个过大的反接电流。</div>
+</details>
+</div>
+<div class="qa">
+<div class="q"><span class="no">4.</span>停车时按下 SB1，电路是怎么动作的？</div>
+<details>
+<summary>看参考答案</summary>
+<div class="a">SB1 是复合按钮。按下去，常闭触点先断开 KM1，电机脱离正转电源。常开触点后闭合，经速度继电器 SR 的常开触点和 KM1 的常闭触点，接通 KM2，电机被反接，很快减速。转速降到 120 转/分以下，SR 断开，KM2 释放，制动结束。</div>
+</details>
+</div>
+<div class="qa">
+<div class="q"><span class="no">5.</span>电机刚启动、还没转起来的时候，如果制动支路碰巧接通，KM2 会吸合吗？</div>
+<details>
+<summary>看参考答案</summary>
+<div class="a">不会。因为制动支路里串了 SR 的常开触点，电机没转（转速低于 120 转/分）它是断开的，KM2 吸不上。</div>
+</details>
+</div>
+<div class="qa">
+<div class="q"><span class="no">6.</span>制动结束后电机反而反转起来了。什么原因？</div>
+<details>
+<summary>看参考答案</summary>
+<div class="a">速度继电器失灵，转速降下来以后它的常开触点没有断开，KM2 没释放，电机就被反接着转起来了。</div>
+<div class="tip"><b>老师可能追问：</b>一句话记：制动后反转 = 速度继电器没断开。</div>
+</details>
+</div>
+</section>
+<section class="group" id="gc09">
+<h2>十、09 能耗制动（直流通入定子）</h2>
+<p class="hint">三个关键词：直流、整流电路、时间继电器。</p>
+<figure>
+<img src="img/a09.png" alt="十、09 能耗制动（直流通入定子） 电路图">
+</figure>
+<div class="qa">
+<div class="q"><span class="no">1.</span>什么是能耗制动？为什么叫“能耗”？</div>
+<details>
+<summary>看参考答案</summary>
+<div class="a">切断交流电源后，立即向定子绕组通入直流电流，产生一个固定不动的磁场。转子在里头转动感应出电流，受到和转向相反的力，转子的动能被变成电能消耗掉，电机平稳准确地停下。</div>
+</details>
+</div>
+<div class="qa">
+<div class="q"><span class="no">2.</span>能耗制动电路由哪几部分组成？</div>
+<details>
+<summary>看参考答案</summary>
+<div class="a">主电路、控制电路和整流电路三部分。整流电路包括控制变压器 T、整流桥和可调电阻 RP，把交流变成合适大小的直流。</div>
+</details>
+</div>
+<div class="qa">
+<div class="q"><span class="no">3.</span>可调电阻 RP 起什么作用？</div>
+<details>
+<summary>看参考答案</summary>
+<div class="a">调节通入定子的直流电流大小，也就是调节制动力矩的大小，从而调节制动快慢。</div>
+</details>
+</div>
+<div class="qa">
+<div class="q"><span class="no">4.</span>停车时按下 SB1，电路怎么动作？</div>
+<details>
+<summary>看参考答案</summary>
+<div class="a">SB1 是复合按钮。按下去，常闭触点先断开 KM1，电机脱离交流电源。常开触点后闭合，KT 和 KM2 同时得电。KM2 的主触点把直流送入定子绕组，开始制动。时间到，KT 的延时断开常闭触点断开 KM2，直流切断，制动结束。</div>
+</details>
+</div>
+<div class="qa">
+<div class="q"><span class="no">5.</span>交流电源和直流电源为什么不能同时接入？电路怎么保证？</div>
+<details>
+<summary>看参考答案</summary>
+<div class="a">同时接入会短路或烧坏整流装置。电路用两对互锁触点保证：KM2 的常闭串在 KM1 回路里，KM1 的常闭串在 KM2 回路里。KM1 没释放，KM2 吸不上。</div>
+</details>
+</div>
+<div class="qa">
+<div class="q"><span class="no">6.</span>制动结束后直流还通着，电机发热。什么原因？</div>
+<details>
+<summary>看参考答案</summary>
+<div class="a">KT 的延时断开常闭触点没有断开（KT 不动作、整定时间不对），或者 KM2 铁芯粘住不释放，主触点断不开。</div>
+</details>
+</div>
+</section>
+<section class="group" id="gcompare">
+<h2>十一、对比题（老师最喜欢拿来考“你到底懂不懂”）</h2>
+<p class="hint">这类题要答出“相同点、不同点、各自适用场合”。</p>
+<div class="qa">
+<div class="q"><span class="no">1.</span>Y—△ 降压启动和自耦变压器降压启动，各有什么特点？怎么选？</div>
+<details>
+<summary>看参考答案</summary>
+<div class="a">Y—△：最简单便宜，启动电流和启动转矩都是直接启动的 1/3，只适用于三角形接法的电机、轻载启动。自耦变压器：抽头可以选择，启动转矩较大，适用于较大容量的电机，但设备贵、体积大。</div>
+<div class="tip"><b>老师可能追问：</b>记住两个数字：Y—△ 是 1/3；自耦变压器常用抽头是 80%、65%。</div>
+</details>
+</div>
+<div class="qa">
+<div class="q"><span class="no">2.</span>机械制动、反接制动、能耗制动，各有什么优缺点？</div>
+<details>
+<summary>看参考答案</summary>
+<div class="a">机械制动：靠闸瓦摩擦，断电也能制动，能保持住位置，但闸瓦会磨损。反接制动：力矩大、停得快，但冲击大、耗能大，要串限流电阻，还要速度继电器防止反转。能耗制动：平稳、准确，需要整流装置，制动时间由时间继电器控制。</div>
+</details>
+</div>
+<div class="qa">
+<div class="q"><span class="no">3.</span>按钮切换的 Y—△ 和时间继电器切换的 Y—△，哪个好？为什么？</div>
+<details>
+<summary>看参考答案</summary>
+<div class="a">时间继电器的好。启动时间自动控制，不受操作人员影响，启动过程平稳，操作简单。按钮切换要靠人判断什么时候切换，切早了启动电流大，切晚了浪费时间。</div>
+</details>
+</div>
+<div class="qa">
+<div class="q"><span class="no">4.</span>自锁触点和互锁触点，一个并联一个串联，为什么？</div>
+<details>
+<summary>看参考答案</summary>
+<div class="a">自锁是“多留一条路让线圈保持通电”，所以要并联，有一条路通就行。互锁是“让对方通不了”，所以要串联，断一个就全断。</div>
+<div class="tip"><b>老师可能追问：</b>这是把 4 条规律串起来问，答出来老师会满意。</div>
+</details>
+</div>
+<div class="qa">
+<div class="q"><span class="no">5.</span>这 9 个电路里，哪几个用到了时间继电器？各起什么作用？</div>
+<details>
+<summary>看参考答案</summary>
+<div class="a">三个：04 自耦降压启动，KT 到时间控制从降压切换到全压；06 时间继电器 Y—△ 启动，KT 到时间控制从星形切换到三角形；09 能耗制动，KT 控制制动时间长短。</div>
+</details>
+</div>
+<div class="qa">
+<div class="q"><span class="no">6.</span>这 9 个电路里，哪几个用到了复合按钮？为什么用？</div>
+<details>
+<summary>看参考答案</summary>
+<div class="a">四个：02 正反转（两个启动按钮，用来做按钮互锁）、05 按钮 Y—△（切换按钮）、08 反接制动（停止按钮，停止兼制动）、09 能耗制动（停止按钮，停止兼制动）。目的都是利用“动断先断、动合后合”，用一步操作完成“先断一路、再通一路”。</div>
+<div class="tip"><b>老师可能追问：</b>答题时说功能（启动按钮、切换按钮、停止按钮），不要报编号：这几个电路里旁白和电路图的编号不一样。</div>
+</details>
+</div>
+</section>
+<section class="group" id="gfault">
+<h2>十二、故障判断题（“老师，电机坏了你帮我看看”）</h2>
+<p class="hint">答题套路：先问/先看接触器吸不吸 → 分清是控制回路还是主电路 → 按电流顺序一段一段查。</p>
+<div class="qa">
+<div class="q"><span class="no">1.</span>按启动按钮，接触器不吸合，电机不转。说出至少 3 个可能原因。</div>
+<details>
+<summary>看参考答案</summary>
+<div class="a">控制回路有断点：熔断器熔断；热继电器常闭触点动作没复位；停止按钮接触不良；启动按钮坏；互锁触点接触不良；接触器线圈断线。</div>
+</details>
+</div>
+<div class="qa">
+<div class="q"><span class="no">2.</span>按启动按钮，接触器吸合，但电机不转，而且嗡嗡响。什么原因？</div>
+<details>
+<summary>看参考答案</summary>
+<div class="a">主电路缺相。可能是一相熔断器熔断、一相主触点接触不良、一相接线松了。电机缺相不能启动，时间长了会烧。要立即停电检查。</div>
+<div class="tip"><b>老师可能追问：</b>缺相时电流大不大？→ 很大，所以嗡嗡响、发热，必须马上断电。</div>
+</details>
+</div>
+<div class="qa">
+<div class="q"><span class="no">3.</span>接触器吸合，电机转，但一松手就停。</div>
+<details>
+<summary>看参考答案</summary>
+<div class="a">自锁回路断：自锁触点接触不良、自锁触点接线松脱或接错位置。</div>
+</details>
+</div>
+<div class="qa">
+<div class="q"><span class="no">4.</span>电机运行一会儿就自己停，过一会儿又能启动，开一会儿又停。</div>
+<details>
+<summary>看参考答案</summary>
+<div class="a">热继电器动作。电机过载了，FR 常闭触点断开，电机停；冷却后复位又能启动。要查过载原因：负载太重、机械卡住、电机轴承坏、缺相运行、整定电流太小。</div>
+<div class="tip"><b>老师可能追问：</b>能一直按复位继续开吗？→ 不能，会烧电机。</div>
+</details>
+</div>
+<div class="qa">
+<div class="q"><span class="no">5.</span>正反转电路，一个方向能开，另一个方向不能开。</div>
+<details>
+<summary>看参考答案</summary>
+<div class="a">查不能开的那个方向的支路：对方启动按钮的常闭互锁触点、对方接触器的常闭互锁触点、本方启动按钮常开触点、本方线圈。如果两个方向都不能开，查公共部分：熔断器、FR、停止按钮。</div>
+</details>
+</div>
+<div class="qa">
+<div class="q"><span class="no">6.</span>星三角启动电路，启动后电机转速上不去、发闷，切换后正常。是什么问题？</div>
+<details>
+<summary>看参考答案</summary>
+<div class="a">星形启动时转矩只有直接启动的 1/3，带负载启动就会这样。要么减轻负载启动，要么这是正常现象（轻载启动本来就慢）。如果切换后仍然发闷，要查 KM△ 有没有吸合、三角形接法对不对。</div>
+</details>
+</div>
+</section>
+<div id="zoom"><img id="zoomimg" alt="放大的电路图"></div>
+<footer>题目按软件“原理”“排故”两部分的问法整理，参考答案对应《图文版》和《逐线详解》里的内容。按钮编号在 02、03、05、06 这几个电路里，软件旁白和电路图上的标法不一样，答案按功能说，两组题的提示里都注明了。</footer>
+<script>
+// "pick one at random" = the teacher calling on somebody
+var pick = document.getElementById('pick');
+var all = [];
+Array.prototype.forEach.call(document.querySelectorAll('.group .qa'), function (el) {
+  // the question text without its leading number
+  var qtext = el.querySelector('.q').textContent.replace(/^\s*\d+\s*\.\s*/, '');
+  all.push({ q: qtext, a: el.querySelector('.a').innerHTML, tip: el.querySelector('.tip') ? el.querySelector('.tip').innerHTML : '', group: el.parentNode.querySelector('h2').textContent, no: el.querySelector('.no').textContent });
+});
+var last = -1;
+function draw() {
+  var i = Math.floor(Math.random() * all.length);
+  if (all.length > 1 && i === last) { i = (i + 1) % all.length; }
+  last = i;
+  var c = all[i];
+  document.getElementById('pick-from').textContent = c.group + '  第 ' + c.no + ' 题';
+  document.getElementById('pick-q').textContent = c.q;
+  document.getElementById('pick-a').innerHTML = c.a;
+  document.getElementById('pick-tip').innerHTML = c.tip;
+  document.getElementById('pick-a-box').open = false;
+  pick.classList.add('on');
+  pick.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+document.getElementById('draw').onclick = draw;
+document.getElementById('again').onclick = draw;
+document.getElementById('all-answers').onclick = function () {
+  var open = this.getAttribute('data-open') !== '1';
+  Array.prototype.forEach.call(document.querySelectorAll('.qa details'), function (d) { d.open = open; });
+  this.setAttribute('data-open', open ? '1' : '0');
+  this.textContent = open ? '收起全部答案' : '展开全部答案';
+};
+document.addEventListener('click', function (ev) {
+  var img = ev.target;
+  if (img.tagName !== 'IMG' || img.parentNode.tagName !== 'FIGURE') { return; }
+  var z = document.getElementById('zoom');
+  document.getElementById('zoomimg').src = img.src;
+  z.classList.add('on', 'hint');
+});
+document.getElementById('zoom').onclick = function () { this.classList.remove('on', 'hint'); };
+// printing: answers must be on the paper
+var openAll = function () { Array.prototype.forEach.call(document.querySelectorAll('details'), function (d) { d.open = true; }); };
+window.addEventListener('beforeprint', openAll);
+if (window.matchMedia) { var mq = window.matchMedia('print'); if (mq.addEventListener) { mq.addEventListener('change', openAll); } else if (mq.addListener) { mq.addListener(openAll); } }
+</script>
+</body>
+</html>
