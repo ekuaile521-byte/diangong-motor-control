@@ -33,6 +33,11 @@ main{display:grid;grid-template-columns:minmax(0,1.25fr) minmax(300px,1fr);gap:1
 .now{min-height:190px;background:#fff8dc;border:1px solid #e6d98a;border-radius:8px;padding:12px 14px}
 #now-name{font-size:20px;font-weight:bold;color:#0b5d3b;margin-bottom:6px}
 #now-text{font-size:18px}
+.now .wl{margin-top:10px;padding-top:8px;border-top:1px dashed #d9c76a}
+.now .wl b{display:block;font-size:16px;color:#0b5d3b;margin-bottom:2px}
+.now .wl ul{margin:2px 0 0;padding-left:18px;list-style:disc}
+.now .wl li{font-size:15px;line-height:1.55;color:#3a2f00}
+.now .wl a{display:inline-block;margin-top:6px;font-size:14px;color:#0b5d3b}
 .panel h3{font-size:15px;margin:16px 0 6px;color:#555}
 .panel ol,.panel ul{margin:0;padding-left:0;list-style:none}
 .panel li button{display:block;width:100%;text-align:left;font-size:15px;line-height:1.5;padding:6px 8px;border:0;background:transparent;cursor:pointer;border-radius:6px;color:#111}
@@ -55,6 +60,7 @@ main{display:grid;grid-template-columns:minmax(0,1.25fr) minmax(300px,1fr);gap:1
   main{grid-template-columns:1fr}
   .now{min-height:0}
   #now-text{font-size:17px}
+  .now .wl li{font-size:14px}
   header h1{font-size:19px}
   .tools button,.tools a{font-size:14px;padding:6px 12px}
   nav{padding:8px 10px}
@@ -224,8 +230,8 @@ var DATA = {
    {name:"KM2 线圈（运行）",x:818,y:875,say:"KM2 是运行接触器。它吸合，主触点把电机直接接到三相电源上，全压运行。"},
    {name:"KM2 主触点",x:355,y:660,say:"KM2 的主触点，接在电源侧。闭合时电机直接接电源，全压运行。"},
    {name:"自耦变压器 T",x:440,y:700,say:"自耦变压器 T。它的抽头接到电机，抽头电压比电源电压低，所以电机降压启动。抽头有几个，可以选择启动电压。"},
-   {name:"KM1 主触点",x:490,y:660,say:"KM1 的主触点，把自耦变压器的抽头和电机接通。"},
-   {name:"KM1 星点触点",x:455,y:830,say:"KM1 的另一组触点，把自耦变压器的三个首端短接成星形，变压器才能工作。"},
+   {name:"KM1 主触点",x:490,y:660,say:"KM1 的主触点，把三相电源接到自耦变压器的三个首端。KM1 一吸合，变压器通电，电机从抽头拿到较低的电压，开始降压启动。"},
+   {name:"KM1 星点触点",x:455,y:830,say:"KM1 的另一组触点，把自耦变压器的三个尾端短接成星形，变压器才能工作。"},
    {name:"FR 热元件",x:362,y:716,say:COMMON.FRheat},
    {name:"电动机 M",x:352,y:890,say:COMMON.M},
    {name:"QS 电源开关",x:310,y:480,say:COMMON.QS},
@@ -479,13 +485,14 @@ var WIRE = {
 "04": {
   img: "",
   cap: "软件里这个电路没有接线演示页，下面是按原理图整理的接线表",
-  say: "主电路多了自耦变压器：KM2 的主触点在电源侧，全压运行用；KM1 的主触点把变压器的抽头接到电机，降压启动用；KM1 还有一组触点把变压器的三个首端短接成星形。控制回路里 KM1 自锁后给时间继电器 KT 供电，KT 到时间接通中间继电器 KA，KA 断开 KM1、接通 KM2。",
+  say: "主电路多了自耦变压器：KM2 的主触点在电源侧，全压运行用；KM1 的主触点把三相电源接到变压器的首端，变压器的抽头接到电机，降压启动用；KM1 还有一组触点把变压器的三个尾端短接成星形。控制回路里 KM1 自锁后给时间继电器 KT 供电，KT 到时间接通中间继电器 KA，KA 断开 KM1、接通 KM2。",
   rows: [
     ["电源 L1 L2 L3", "QS 上端 → QS 下端 → FU → KM2 主触点上端", "KM2 是运行（全压）接触器"],
     ["KM2 主触点下端", "FR 主触点上端 → 下端 → 电机", "全压运行时电流走这条"],
-    ["自耦变压器 T 抽头", "KM1 主触点上端", "抽头电压低，用来降压启动"],
-    ["KM1 主触点下端", "电机 U V W（与 FR 下端同一节点）", "降压启动时电流走这条"],
-    ["自耦变压器三个首端", "KM1 的另一组触点（短接成星形）", "变压器要星接才能工作"],
+    ["三相电源（和 KM2 上端同一个点）", "KM1 主触点上端 L1 L2 L3", "KM1 是降压启动接触器"],
+    ["KM1 主触点下端 T1 T2 T3", "自耦变压器 T 三个首端", "KM1 吸合，变压器才通电"],
+    ["自耦变压器 T 抽头", "电机 U V W（与 FR 下端同一节点）", "抽头电压低，电机降压启动"],
+    ["自耦变压器 T 三个尾端", "接在一起 → KM1 的另一组触点（短接成星形）", "变压器要星接才能工作"],
     ["控制回路", "FU→FR 常闭→SB1 停止→SB2 启动∥KM1 自锁→KA 常闭→KM1 线圈", "启动支路"],
     ["KM1 自锁触点下端节点", "KT 线圈", "KM1 一吸合，KT 开始计时"],
     ["KT 延时闭合触点", "并联 KA 自锁触点后接 KA 线圈", "时间到，KA 吸合"],
@@ -567,8 +574,9 @@ var WIRE = {
   say: "主电路比别的多一套整流电路：交流经控制变压器 T 降压，再经整流桥变成直流，直流的两个输出经过 KM2 的主触点和可调电阻 RP，接到电机的两相绕组上。控制回路里 KM2 和 KT 同时得电，KT 到时间断开 KM2，制动结束。",
   rows: [
     ["电源", "QS→FU1→KM1 主触点上端→下端→FR→电机", "运行通路"],
-    ["交流电源（两相）", "控制变压器 T 一次侧", "给整流电路供电"],
-    ["变压器 T 二次侧", "整流桥交流两个输入端", "降压后再整流"],
+    ["L2 相（FU1 下端）", "KM2 主触点 → 变压器 T 一次侧一端", "KM2 吸合才给整流电路送电"],
+    ["L3 相（FU1 下端）", "变压器 T 一次侧另一端", "直接接"],
+    ["变压器 T 二次侧", "整流桥交流两个输入端（~）", "降压后再整流"],
     ["整流桥直流输出 +", "KM2 主触点上端", "直流正极"],
     ["KM2 主触点下端", "可调电阻 RP 一端", "RP 调制动电流大小"],
     ["RP 另一端", "电机一相绕组（如 U）", "直流送入定子"],
@@ -579,6 +587,180 @@ var WIRE = {
   ]
 }
 };
+
+// 点某个元件时，直接列出它在实物上怎么接（接线柱 → 接线柱）。键是编号。
+// 端子编号按常见器件标注：接触器主触点 L1 L2 L3 / T1 T2 T3，辅助常开 13/14，常闭 21/22，线圈 A1/A2；
+// 热继电器常闭 95/96；复合按钮和行程开关的常开 13/14、常闭 21/22。
+var WIRES = {
+"01": {
+  1: ["FU1 下端（L3 相）→ FU2 熔断器 → FR 常闭 95", "KM 线圈 A2 → FU2 另一个熔断器 → FU1 下端（L2 相）"],
+  2: ["FR 常闭 95 ← FU2 下端", "FR 常闭 96 → SB1 停止按钮进线"],
+  3: ["SB1 常闭进线 ← FR 常闭 96", "SB1 常闭出线 → SB2 启动按钮进线"],
+  4: ["SB2 常开进线 ← SB1 常闭出线", "SB2 常开出线 → KM 线圈 A1"],
+  5: ["KM 辅助常开 13 → SB2 进线那一侧（和 SB1 出线是同一个点）", "KM 辅助常开 14 → SB2 出线那一侧（和 KM 线圈 A1 是同一个点）"],
+  6: ["KM 线圈 A1 ← SB2 常开出线", "KM 线圈 A2 → FU2 另一个熔断器下端（回 L2 相）"],
+  7: ["KM 上端 L1 L2 L3 ← FU1 下端（黄绿红一一对应）", "KM 下端 T1 T2 T3 → FR 热元件上端"],
+  8: ["FR 主触点上端 ← KM 下端 T1 T2 T3", "FR 主触点下端 → 接线端子排 → 电机 U V W"]
+},
+"02": {
+  1: ["FU1 下端（取两相）→ FU2 两个熔断器上端", "FU2 下端 → 控制回路"],
+  2: ["FU2 下端 → FR 常闭 95", "FR 常闭 96 → SB3 停止按钮进线"],
+  3: ["SB3 常闭进线 ← FR 常闭 96", "SB3 常闭出线 → 分两路：SB2 的常闭触点进线、SB1 的常闭触点进线"],
+  4: ["SB2 的常闭触点进线 ← SB3 常闭出线", "SB2 的常闭触点出线 → SB1 正转启动按钮（常开）进线"],
+  5: ["SB1 常开进线 ← SB2 常闭出线", "SB1 常开出线 → KM2 常闭 21"],
+  6: ["KM1 辅助常开 13 → SB1 常开进线那一侧", "KM1 辅助常开 14 → SB1 常开出线那一侧"],
+  7: ["KM2 常闭 21 ← SB1 常开出线", "KM2 常闭 22 → KM1 线圈 A1"],
+  8: ["KM1 线圈 A1 ← KM2 常闭 22", "KM1 线圈 A2 → FU2 另一个熔断器（回另一相）", "KM1 上端 L1 L2 L3 ← FU1 下端；KM1 下端 T1 T2 T3 → FR 上端（一一对应）"],
+  9: ["KM2 上端 L1 L2 L3 ← FU1 下端", "KM2 下端 T1 T2 T3 → FR 上端，其中两根要交叉（例如 KM2 的 T1 接 FR 第二相、T2 接 FR 第一相）"]
+},
+"03": {
+  1: ["SB1 常闭进线 ← FR 常闭 96", "SB1 常闭出线 → 横线（分给左右两路）"],
+  2: ["SB1 常闭出线 → 这根横线", "横线 → 左路：启动按钮常开 13、KM1 常开 13、SQ1 常开 13", "横线 → 右路：启动按钮常开 13、KM2 常开 13、SQ2 常开 13"],
+  3: ["左路启动按钮常开 13 ← 横线", "左路启动按钮常开 14 → 和 KM1 常开 14、SQ1 常开 14 接在一起 → SQ2 常闭 21"],
+  4: ["KM1 辅助常开 13 → 横线", "KM1 辅助常开 14 → 启动按钮常开 14 那一点"],
+  5: ["SQ1 常开 13 → 横线", "SQ1 常开 14 → 启动按钮常开 14 那一点"],
+  6: ["SQ2 常闭 21 ← 启动按钮常开 14 那一点", "SQ2 常闭 22 → SQ4 常闭 21"],
+  7: ["SQ4 常闭 21 ← SQ2 常闭 22", "SQ4 常闭 22 → KM2 常闭 21"],
+  8: ["KM2 常闭 21 ← SQ4 常闭 22", "KM2 常闭 22 → KM1 线圈 A1"],
+  9: ["KM1 线圈 A1 ← KM2 常闭 22", "KM1 线圈 A2 → 另一相"],
+  10: ["SQ2 常开 13 → 横线", "SQ2 常开 14 → 右路启动按钮常开 14 那一点"]
+},
+"04": {
+  1: ["FR 常闭 95 ← 控制回路熔断器下端", "FR 常闭 96 → SB1 停止按钮进线"],
+  2: ["SB1 常闭进线 ← FR 常闭 96", "SB1 常闭出线 → 横线（分四路）"],
+  3: ["SB2 常开进线 ← 横线", "SB2 常开出线 → KA 常闭 21"],
+  4: ["KM1 辅助常开 13 → 横线", "KM1 辅助常开 14 → SB2 常开出线那一点"],
+  5: ["KT 线圈 A1 → KM1 常开 14 那一点", "KT 线圈 A2 → 另一相"],
+  6: ["KA 常闭 21 ← SB2 常开出线那一点", "KA 常闭 22 → KM1 线圈 A1"],
+  7: ["KM1 线圈 A1 ← KA 常闭 22", "KM1 线圈 A2 → 另一相", "KM1 主触点：三相电源 → 自耦变压器 T 三个首端"],
+  8: ["KT 延时闭合常开 13 → 横线", "KT 延时闭合常开 14 → KA 线圈 A1（KA 自锁常开 13/14 也并在这一对触点两端）"],
+  9: ["KA 常开 13 → 横线", "KA 常开 14 → KM1 常闭 21", "KM1 常闭 22 → KM2 线圈 A1"]
+},
+"05": {
+  1: ["FR 常闭 95 ← 控制回路熔断器下端", "FR 常闭 96 → SB3 停止按钮进线"],
+  2: ["SB3 常闭进线 ← FR 常闭 96", "SB3 常闭出线 → SB1 常开进线、KM 常开 13"],
+  3: ["SB1 常开 13 ← SB3 常闭出线", "SB1 常开 14 → 节点（横线）"],
+  4: ["KM 辅助常开 13 → SB3 常闭出线那一点", "KM 辅助常开 14 → 节点（横线）"],
+  5: ["KM 线圈 A1 → 横线（直接接）", "KM 线圈 A2 → 另一相", "KM 主触点：FU1 下端 ↔ FR 上端；FR 下端 → 电机 U1 V1 W1"],
+  6: ["KM△ 常闭 21 ← 横线", "KM△ 常闭 22 → SB2 常闭进线"],
+  7: ["SB2 常闭进线 ← KM△ 常闭 22", "SB2 常闭出线 → KMY 线圈 A1"],
+  8: ["KMY 线圈 A1 ← SB2 常闭出线", "KMY 线圈 A2 → 另一相", "KMY 主触点：电机 U2 V2 W2 三个端子接在一起"],
+  9: ["SB2 常开进线 ← KMY 常闭 22", "SB2 常开出线 → KM△ 线圈 A1"],
+  10: ["KM△ 辅助常开 13 → KMY 常闭 22 那一点", "KM△ 辅助常开 14 → KM△ 线圈 A1 那一点"],
+  11: ["KMY 常闭 21 ← 横线", "KMY 常闭 22 → SB2 常开进线"],
+  12: ["KM△ 线圈 A1 ← SB2 常开出线", "KM△ 线圈 A2 → 另一相", "KM△ 主触点：U2→W1、V2→U1、W2→V1"]
+},
+"06": {
+  1: ["FR 常闭 95 ← 控制回路熔断器下端", "FR 常闭 96 → SB 停止按钮进线"],
+  2: ["SB 常闭进线 ← FR 常闭 96", "SB 常闭出线 → SB1 常开进线、KM 常开 13"],
+  3: ["SB1 常开 13 ← SB 常闭出线", "SB1 常开 14 → 节点（横线）"],
+  4: ["KM 辅助常开 13 → SB 常闭出线那一点", "KM 辅助常开 14 → 节点（横线）"],
+  5: ["KM 线圈 A1 → 横线（直接接）", "KM 线圈 A2 → 另一相", "KM 主触点：FU1 下端 ↔ FR 上端；FR 下端 → 电机 U1 V1 W1"],
+  6: ["KM△ 常闭 21 ← 横线", "KM△ 常闭 22 → KT 常闭进线、KT 线圈 A1"],
+  7: ["KT 延时断开常闭进线 ← KM△ 常闭 22", "KT 延时断开常闭出线 → KMY 线圈 A1"],
+  8: ["KMY 线圈 A1 ← KT 常闭出线", "KMY 线圈 A2 → 另一相", "KMY 主触点：电机 U2 V2 W2 三个端子接在一起"],
+  9: ["KT 线圈 A1 → KM△ 常闭 22 那一点", "KT 线圈 A2 → 另一相"],
+  10: ["KMY 常闭 21 ← 横线", "KMY 常闭 22 → KT 延时闭合常开进线"],
+  11: ["KT 延时闭合常开进线 ← KMY 常闭 22", "KT 延时闭合常开出线 → KM△ 线圈 A1"],
+  12: ["KM△ 线圈 A1 ← KT 常开出线", "KM△ 线圈 A2 → 另一相", "KM△ 主触点：U2→W1、V2→U1、W2→V1"]
+},
+"07": {
+  1: ["FU1 下端（取两相）→ FU2 两个熔断器上端", "FU2 下端 → SB1 常闭进线", "回路另一头经过 KM 线圈、FR 常闭，回到 FU2 另一个熔断器下端"],
+  2: ["SB1 常闭进线 ← FU2 下端", "SB1 常闭出线 → SB2 常开进线、KM 常开 13"],
+  3: ["SB2 常开进线 ← SB1 常闭出线", "SB2 常开出线 → KM 线圈 A1"],
+  4: ["KM 辅助常开 13 → SB1 常闭出线那一点", "KM 辅助常开 14 → KM 线圈 A1 那一点"],
+  5: ["KM 线圈 A1 ← SB2 常开出线", "KM 线圈 A2 → FR 常闭 95", "FR 常闭 96 → FU2 另一个熔断器下端（回 L2 相）"],
+  6: ["FR 常闭 95 ← KM 线圈 A2", "FR 常闭 96 → FU2 另一个熔断器下端"],
+  7: ["抱闸线圈端子 1 → 电机 V 相端子（从 FR 下端的 V 相线上引出，和电机 V 并联）", "抱闸线圈端子 2 → 电机 W 相端子（从 FR 下端的 W 相线上引出）", "两个头都接在 KM 主触点后面，所以 KM 一吸合电机和抱闸同时有电，一断电同时没电"]
+},
+"08": {
+  1: ["FR 常闭 95 ← 控制回路熔断器下端", "FR 常闭 96 → 节点（分三路）"],
+  2: ["SB1 常闭进线 ← FR 常闭 96", "SB1 常闭出线 → SB2 常开进线、KM1 常开 13"],
+  3: ["SB2 常开进线 ← SB1 常闭出线", "SB2 常开出线 → KM2 常闭 21"],
+  4: ["SB1 常开进线 ← FR 常闭 96 那一点", "SB1 常开出线 → SR 常开进线"],
+  5: ["SR 常开 13 ← SB1 常开出线", "SR 常开 14 → KM1 常闭 21"],
+  6: ["KM2 常闭 21 ← SB2 常开出线", "KM2 常闭 22 → KM1 线圈 A1"],
+  7: ["KM1 线圈 A1 ← KM2 常闭 22", "KM1 线圈 A2 → 另一相", "KM1 主触点：FU1 下端 ↔ FR 上端（一一对应）"],
+  8: ["KM1 常闭 21 ← SR 常开 14", "KM1 常闭 22 → KM2 线圈 A1"],
+  9: ["KM2 线圈 A1 ← KM1 常闭 22", "KM2 线圈 A2 → 另一相", "KM2 主触点：电阻 R 下端 ↔ FR 上端（两相交叉）"],
+  10: ["L1 L2 L3 三相（FU1 下端）→ 三个电阻 R 上端", "电阻 R 下端 → KM2 上端 L1 L2 L3", "KM2 下端 T1 T2 T3 → FR 上端，其中两相交叉对调"]
+},
+"09": {
+  1: ["FR 常闭 95 ← 控制回路熔断器下端", "FR 常闭 96 → 节点（分三路）"],
+  2: ["SB1 常闭进线 ← FR 常闭 96", "SB1 常闭出线 → SB2 常开进线、KM1 常开 13"],
+  3: ["SB2 常开进线 ← SB1 常闭出线", "SB2 常开出线 → KM2 常闭 21"],
+  4: ["SB1 常开进线 ← FR 常闭 96 那一点", "SB1 常开出线 → KT 常闭进线、KT 线圈 A1"],
+  5: ["KM1 辅助常开 13 → SB1 常闭出线那一点", "KM1 辅助常开 14 → KM2 常闭 21 那一点"],
+  6: ["KT 延时断开常闭进线 ← SB1 常开出线", "KT 延时断开常闭出线 → KM1 常闭 21"],
+  7: ["KM2 常闭 21 ← SB2 常开出线那一点", "KM2 常闭 22 → KM1 线圈 A1"],
+  8: ["KM1 常闭 21 ← KT 常闭出线", "KM1 常闭 22 → KM2 线圈 A1"],
+  9: ["KM1 线圈 A1 ← KM2 常闭 22", "KM1 线圈 A2 → 另一相", "KM1 主触点：FU 下端 ↔ FR 上端"],
+  10: ["KM2 线圈 A1 ← KM1 常闭 22", "KM2 线圈 A2 → 另一相", "KM2 主触点共三对：L2 相 ↔ 变压器 T 一次侧；整流桥直流「+」↔ RP；整流桥直流「−」↔ 电机一相端子"],
+  11: ["KT 线圈 A1 → SB1 常开出线那一点", "KT 线圈 A2 → 另一相"],
+  12: ["KM2 上面一对：一端接 FU1 下端的 L2 相，另一端接变压器 T 一次侧；T 一次侧另一端直接接 FU1 下端的 L3 相", "T 二次侧两个头 → 整流桥的两个「~」端", "整流桥直流「+」→ KM2 下面左边那对触点 → RP → 电机一相端子（如 V）", "整流桥直流「−」→ KM2 下面右边那对触点 → 电机另一相端子（如 W）"]
+}
+};
+
+// 图上没有编号的元件（电源开关、熔断器、主触点、机械零件……），按名字匹配
+var WIRES_X_STAR = ["电机 U1 V1 W1 ← FR 热元件下端", "U2 V2 W2 三个端子 → KM△ 下端（KM△ 闭合时 U2→W1、V2→U1、W2→V1）", "U2 V2 W2 三个端子同时接在一起 → KMY 上端（KMY 闭合时三相短接成星形）"];
+
+function wireLines(entry) {
+  var t = WIRES[cur];
+  var n = entry.name || "";
+  if (entry.n !== undefined) { return (t && t[entry.n]) ? t[entry.n] : []; }
+  if (entry.path !== undefined) { return []; }
+  var star = (cur === "05" || cur === "06");
+  var twoKm = (cur === "02" || cur === "03" || cur === "08");
+  if (/^QS/.test(n)) { return ["QS 上端 1 3 5 ← 电源 L1 L2 L3", "QS 下端 2 4 6 → FU1 三个熔断器上端"]; }
+  if (/^熔断器/.test(n)) {
+    if (cur === "04") { return ["两个熔断器分别串在 L3、L2 两相里", "熔断器下端 → 一路去控制回路（到 FR 常闭 95），一路去控制变压器 Tr 的原边"]; }
+    var r = ["FU1 上端 ← QS 下端 2 4 6", "FU1 下端 → " + (twoKm ? "KM1、KM2 上端 L1 L2 L3" : "KM 上端 L1 L2 L3"), "再从 FU1 下端取两相 → FU2 两个熔断器 → 控制回路"];
+    if (cur === "08") { r.splice(1, 1, "FU1 下端 → KM1 上端 L1 L2 L3；同时三相各经过一个电阻 R → KM2 上端 L1 L2 L3"); }
+    if (cur === "09") { r.push("其中 L3、L2 两相还接到控制变压器 T 的一次侧（L3 直接接，L2 经过 KM2 上面那对主触点）"); }
+    return r;
+  }
+  if (/^FR 热元件/.test(n)) {
+    var top = twoKm ? "FR 热元件上端 ← KM1 下端 T1 T2 T3，同时也 ← KM2 下端 T1 T2 T3（两个接触器并联在这里）"
+      : (cur === "04" ? "FR 热元件上端 ← KM2 下端 T1 T2 T3" : "FR 热元件上端 ← KM 下端 T1 T2 T3");
+    return [top, star ? "FR 热元件下端 → 电机 U1 V1 W1" : "FR 热元件下端 → 接线端子排 → 电机 U V W"];
+  }
+  if (/^电动机/.test(n)) { return star ? WIRES_X_STAR : ["电机 U V W ← 接线端子排 ← FR 热元件下端"]; }
+  if (/^KM 主触点/.test(n)) { return ["KM 上端 L1 L2 L3 ← FU1 下端", "KM 下端 T1 T2 T3 → FR 热元件上端"]; }
+  if (/^KM1 主触点/.test(n)) {
+    return (cur === "04")
+      ? ["KM1 上端 L1 L2 L3 ← 三相电源（和 KM2 上端接在同一个点）", "KM1 下端 T1 T2 T3 → 自耦变压器 T 三个首端"]
+      : ["KM1 上端 L1 L2 L3 ← FU1 下端", "KM1 下端 T1 T2 T3 → FR 上端（一一对应）"];
+  }
+  if (/^KM2 主触点/.test(n)) {
+    if (cur === "04") { return ["三相电源 → KM2 上端 L1 L2 L3", "KM2 下端 T1 T2 T3 → FR 上端 → FR 下端 → 电机 U V W（全压运行）"]; }
+    if (cur === "08") { return ["电阻 R 下端 → KM2 上端 L1 L2 L3", "KM2 下端 T1 T2 T3 → FR 上端，其中两相交叉对调"]; }
+    return ["KM2 上端 L1 L2 L3 ← FU1 下端", "KM2 下端 T1 T2 T3 → FR 上端，其中两相交叉对调"];
+  }
+  if (/^KM1 星点触点/.test(n)) { return ["KM1 这组触点的三个端子接在一起，再接到自耦变压器的三个尾端", "变压器的三个尾端被短接成星形（Y），变压器才能工作"]; }
+  if (/^自耦变压器/.test(n)) { return ["变压器三个首端 → KM1 主触点下端 T1 T2 T3（KM1 上端接三相电源）", "变压器抽头（80% 或 65%）→ 电机 U V W", "变压器三个尾端 → 接在一起，经 KM1 的星点触点短接"]; }
+  if (/^控制变压器/.test(n)) {
+    return (cur === "04")
+      ? ["Tr 原边两个头 → L3、L2 两相上的熔断器下端", "Tr 副边一端 → 三个指示灯的公共端", "Tr 副边另一端 → HL1 直接接；HL2 串 KM1 辅助常开 13/14；HL3 串 KM2 辅助常开 13/14"]
+      : ["T 一次侧一端 ← FU1 下端的 L3 相", "T 一次侧另一端 ← KM2 上面那对主触点（KM2 另一端接 FU1 下端的 L2 相）", "T 二次侧两个头 → 整流桥的两个「~」端"];
+  }
+  if (/^指示灯/.test(n)) { return ["三个指示灯的一端接在一起 → Tr 副边一端", "HL1 另一端 → Tr 副边另一端（直接接，有电就亮）", "HL2 另一端 → KM1 辅助常开 14，13 → Tr 副边另一端", "HL3 另一端 → KM2 辅助常开 14，13 → Tr 副边另一端"]; }
+  if (/^(衔铁|杠杆|弹簧|闸瓦|闸轮)/.test(n)) { return ["机械零件，不接线", "线圈有电 → 吸住衔铁 → 带动杠杆 → 闸瓦离开闸轮（松闸）；线圈没电 → 弹簧把闸瓦压紧闸轮（抱闸）"]; }
+  if (/^KMY 主触点/.test(n)) { return ["电机 U2 V2 W2 → KMY 主触点上端 L1 L2 L3", "KMY 主触点下端 T1 T2 T3 用短接片（或三根线）接在一起"]; }
+  if (/^KM△ 主触点/.test(n)) { return ["KM△ 上端三个端子 → 电机的 W1、U1、V1（也就是 FR 下端那三点，注意是交叉接的）", "KM△ 下端三个端子 → 电机 U2、V2、W2", "这样一闭合：U2—W1、V2—U1、W2—V1 接通，电机接成三角形"]; }
+  if (/^KA 线圈/.test(n)) { return ["KA 线圈 A1 ← KT 延时闭合常开 14（KA 自己的常开 13/14 也接在这两点之间）", "KA 线圈 A2 → 另一相"]; }
+  if (/^KM2 线圈（运行）/.test(n)) { return ["KM2 线圈 A1 ← KM1 常闭 22", "KM2 线圈 A2 → 另一相"]; }
+  if (/^右支路/.test(n)) {
+    return (cur === "02")
+      ? ["SB1 的常闭触点出线 → SB2 反转启动按钮（常开）进线", "SB2 常开出线 → KM1 常闭 21", "KM1 常闭 22 → KM2 线圈 A1", "KM2 辅助常开 13/14 → 并在 SB2 常开触点两端（自锁）", "KM2 线圈 A2 → FU2 另一个熔断器"]
+      : ["右支路启动按钮常开 13、KM2 常开 13、SQ2 常开 13 → 都接横线", "三个触点的出线（14）接在一起 → SQ1 常闭 21", "SQ1 常闭 22 → SQ3 常闭 21", "SQ3 常闭 22 → KM1 常闭 21", "KM1 常闭 22 → KM2 线圈 A1"];
+  }
+  if (/^SQ3/.test(n)) { return ["SQ3 常闭 21 ← SQ1 常闭 22", "SQ3 常闭 22 → KM1 常闭 21"]; }
+  if (/^SR/.test(n)) { return ["SR 常开 13 ← SB1 常开出线", "SR 常开 14 → KM1 常闭 21", "SR 本体装在电机轴端，靠轴带着转，不另外接线"]; }
+  if (/^控制变压器/.test(n)) { return ["T 一次侧一端 ← FU1 下端的 L3 相", "T 一次侧另一端 ← KM2 上面那对主触点（KM2 另一端接 FU1 下端的 L2 相）", "T 二次侧两个头 → 整流桥的两个「~」端"]; }
+  if (/^整流桥/.test(n)) { return ["两个「~」端 ← 变压器 T 二次侧", "「+」→ KM2 主触点 → RP → 电机一相端子", "「−」→ KM2 主触点 → 电机另一相端子"]; }
+  if (/^可调电阻/.test(n)) { return ["RP 一端 ← KM2 主触点下端", "RP 另一端 → 电机一相端子"]; }
+  return [];
+}
 
 var W = 900, H = 950;
 var cur = "01";
@@ -633,6 +815,24 @@ function stopPlaying() { playing = false; playBtn.textContent = "▶ 从头讲�
 function show(entry, ringAt) {
   nowName.textContent = entry.name;
   nowText.textContent = entry.say;
+  var wl = wireLines(entry);
+  if (wl.length) {
+    // 点到哪个元件，就在讲解框里直接列出它在实物上怎么接
+    var box = document.createElement("div");
+    box.className = "wl";
+    var b = document.createElement("b");
+    b.textContent = "实物上怎么接（哪个接线柱接哪个）";
+    box.appendChild(b);
+    var ul = document.createElement("ul");
+    for (var k = 0; k < wl.length; k += 1) { var li = document.createElement("li"); li.textContent = wl[k]; ul.appendChild(li); }
+    box.appendChild(ul);
+    var go = document.createElement("a");
+    go.href = "#wirebox";
+    go.textContent = "看下面的实物接线图 ↓";
+    go.onclick = function (ev) { ev.preventDefault(); document.getElementById("wirebox").scrollIntoView({ behavior: "smooth", block: "start" }); };
+    box.appendChild(go);
+    nowText.appendChild(box);
+  }
   var at = ringAt || entry;
   ring.style.left = (at.x / W * 100) + "%";
   ring.style.top = (at.y / H * 100) + "%";
@@ -649,7 +849,10 @@ function show(entry, ringAt) {
 function select(entry, speakIt) {
   stopPlaying();
   show(entry);
-  if (speakIt !== false) { speak(entry.name, entry.say); }
+  if (speakIt !== false) {
+    var wl = wireLines(entry);
+    speak(entry.name, wl.length ? entry.say + " 实物上怎么接：" + wl.join("；") + "。" : entry.say);
+  }
 }
 
 function intro() {
