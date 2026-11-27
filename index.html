@@ -1,0 +1,832 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>电动机控制 · 哪里不会点哪里</title>
+<style>
+*{box-sizing:border-box}
+body{font-family:"Microsoft YaHei","PingFang SC","Noto Sans CJK SC",sans-serif;margin:0;background:#f3f5f7;color:#111;line-height:1.7}
+header{background:#0b5d3b;color:#fff;padding:14px 18px}
+header h1{margin:0;font-size:22px}
+.tools{display:flex;flex-wrap:wrap;gap:10px;margin-top:10px;align-items:center}
+.tools button,.tools a{font-size:15px;padding:7px 14px;border-radius:20px;border:1px solid #fff;background:#fff;color:#0b5d3b;text-decoration:none;cursor:pointer}
+.tools button.off{background:transparent;color:#fff}
+.tools button:disabled{opacity:.5;cursor:default}
+nav{display:flex;flex-wrap:wrap;gap:6px;padding:10px 14px;background:#fff;border-bottom:1px solid #d5d9dd;position:sticky;top:0;z-index:5}
+nav button{font-size:14px;padding:6px 10px;border:1px solid #c9ced3;background:#fff;border-radius:8px;cursor:pointer;color:#222}
+nav button.on{background:#0b5d3b;color:#fff;border-color:#0b5d3b}
+main{display:grid;grid-template-columns:minmax(0,1.25fr) minmax(300px,1fr);gap:14px;padding:12px;max-width:1500px;margin:0 auto}
+.stage{position:relative;background:#fff;border:1px solid #c9ced3;border-radius:8px;overflow:hidden;touch-action:manipulation}
+.stage img{display:block;width:100%;height:auto;user-select:none;-webkit-user-drag:none}
+.stage .hot{position:absolute;transform:translate(-50%,-50%);border-radius:50%;background:transparent;border:0;padding:0;cursor:pointer}
+.stage .hot:focus-visible{outline:3px solid #0b5d3b}
+.stage .hot:hover{background:rgba(11,93,59,.16)}
+.ring{position:absolute;width:58px;height:58px;border:4px solid #0b5d3b;border-radius:50%;transform:translate(-50%,-50%);pointer-events:none;display:none;box-shadow:0 0 0 3px #fff}
+.ring.on{display:block;animation:pulse 1s ease-out 2}
+@keyframes pulse{0%{transform:translate(-50%,-50%) scale(.6);opacity:1}100%{transform:translate(-50%,-50%) scale(1.5);opacity:0}}
+.hint{font-size:14px;color:#555;margin:8px 2px 0}
+.panel{background:#fff;border:1px solid #c9ced3;border-radius:8px;padding:14px;align-self:start}
+.now{min-height:190px;background:#fff8dc;border:1px solid #e6d98a;border-radius:8px;padding:12px 14px}
+#now-name{font-size:20px;font-weight:bold;color:#0b5d3b;margin-bottom:6px}
+#now-text{font-size:18px}
+.panel h3{font-size:15px;margin:16px 0 6px;color:#555}
+.panel ol,.panel ul{margin:0;padding-left:0;list-style:none}
+.panel li button{display:block;width:100%;text-align:left;font-size:15px;line-height:1.5;padding:6px 8px;border:0;background:transparent;cursor:pointer;border-radius:6px;color:#111}
+.panel li button:hover{background:#eef3f0}
+.panel li button.on{background:#0b5d3b;color:#fff}
+.panel li button b{display:inline-block;min-width:24px;text-align:center;background:#ffe13c;color:#000;border-radius:50%;margin-right:6px;font-size:13px;padding:1px 0}
+.sw{display:inline-block;width:26px;height:6px;border-radius:3px;margin-right:8px;vertical-align:middle}
+.wire{border-top:1px dashed #b9c2c7;margin-top:14px;padding-top:10px}
+.wire h3{font-size:15px;margin:0 0 6px;color:#555;display:flex;justify-content:space-between;align-items:center;gap:8px}
+.wire h3 button{font-size:13px;padding:4px 10px;border:1px solid #0b5d3b;color:#0b5d3b;background:#fff;border-radius:14px;cursor:pointer}
+.wire img{display:block;width:100%;height:auto;border:1px solid #c9ced3;border-radius:6px;background:#fff;cursor:zoom-in}
+.wire .cap{font-size:13px;color:#666;margin-top:6px}
+.wire table{font-size:13px;margin-top:8px}
+.wire td,.wire th{padding:4px 6px}
+.wire table td:first-child{white-space:nowrap;font-weight:bold;color:#0b5d3b}
+#zoom{position:fixed;inset:0;background:rgba(0,0,0,.88);display:none;z-index:50;align-items:center;justify-content:center;cursor:zoom-out}
+#zoom.on{display:flex}
+#zoom img{max-width:96vw;max-height:94vh;background:#fff}
+@media (max-width:900px){
+  main{grid-template-columns:1fr}
+  .now{min-height:0}
+  #now-text{font-size:17px}
+  header h1{font-size:19px}
+  .tools button,.tools a{font-size:14px;padding:6px 12px}
+  nav{padding:8px 10px}
+  nav button{font-size:13px;padding:5px 8px}
+  main{padding:8px;gap:10px}
+  .panel{padding:10px}
+  .panel h3{font-size:14px;margin-top:12px}
+  .panel li button{font-size:15px;padding:8px}
+  /* 接线表在手机上改成卡片，一条一块 */
+  .wire table,.wire tbody,.wire tr,.wire td{display:block;width:100%}
+  .wire table{border:0}
+  .wire tr:first-child{display:none}
+  .wire tr{border:1px solid #c9ced3;border-radius:8px;margin:0 0 8px;padding:8px 10px;background:#fbfdfc}
+  .wire td{border:0;padding:2px 0;font-size:14px}
+  .wire td:first-child{font-size:15px;color:#0b5d3b;font-weight:bold;white-space:normal}
+  .wire td:nth-child(2){color:#111}
+  .wire td:nth-child(3){color:#666;font-size:13px}
+  .wire td:nth-child(2)::before{content:"→ ";color:#0b5d3b;font-weight:bold}
+}
+</style>
+</head>
+<body>
+<header>
+  <h1>电动机控制 · 哪里不会点哪里</h1>
+  <div class="tools">
+    <button id="voice" type="button">🔊 朗读：开</button>
+    <button id="playall" type="button">▶ 从头讲一遍</button>
+    <a href="text.html">看完整文字版</a> <a href="study.pdf">PDF</a>
+  </div>
+</header>
+<nav id="tabs"></nav>
+<main>
+  <section>
+    <div class="stage" id="stage">
+      <img id="pic" alt="控制电路原理图" draggable="false">
+      <div class="ring" id="ring"></div>
+    </div>
+    <p class="hint">点图里的触点、按钮、线圈、黄色编号或彩线，就讲那一个。点空白处，会讲离它最近的那个。</p>
+  </section>
+  <aside class="panel">
+    <div class="now"><div id="now-name"></div><div id="now-text"></div></div>
+    <h3>编号（从上往下）</h3>
+    <ol id="list"></ol>
+    <h3>彩线 = 电流走的路</h3>
+    <ul id="paths"></ul>
+    <div class="wire" id="wirebox">
+      <h3><span>实物接线（哪个接线柱接哪个）</span><button id="wiresay" type="button">讲一遍接线</button></h3>
+      <img id="wireimg" alt="实物接线图">
+      <div class="cap" id="wirecap"></div>
+      <table id="wiretab"></table>
+    </div>
+  </aside>
+</main>
+<div id="zoom"><img id="zoomimg" alt="接线图放大"></div>
+
+<script>
+var COMMON = {
+  QS: "QS 是电源开关，接在三根电源线 L1、L2、L3 上。合上它，后面的主电路和控制电路才有电；断开它，就把电源和电路隔离开。",
+  FU: "这是熔断器 FU，每相一个，串在主电路里做短路保护。电路短路时电流很大，熔丝先熔断，把电切断，保护线路和设备。",
+  FRheat: "这是热继电器 FR 的热元件，分别串在主电路的三相里，流过的就是电机电流。电机过载时电流变大，热元件发热，双金属片弯曲，去推动控制电路里它的常闭触点断开。所以热元件一定串在主电路里，常闭触点一定串在控制电路里。",
+  M: "这是三相异步电动机 M，三个接线端 U、V、W 接三根相线。三相通电就有旋转磁场，电机就转；任意对调其中两根线，电机就反转。"
+};
+
+var DATA = {
+"01": {
+  tab: "01 正转自锁", img: "img/s01.png",
+  intro: ["有过载保护的单向运转控制", "一切电路的基础。先点黄色编号 1，从上往下听一遍；哪个触点、哪根线不懂，就再点它。"],
+  items: [
+   {n:1,name:"控制回路的电源线",x:571,y:363,bx:522,by:340,say:"这根线从 L3 相线穿过熔断器，把电引进控制回路，回路另一头接回 L2 相线。为什么跨在两相上：接触器线圈的额定电压是 380 伏，两根相线之间正好是 380 伏线电压。熔断器在这里做短路保护。"},
+   {n:2,name:"FR 常闭触点",x:735,y:470,bx:772,by:522,say:"这是热继电器 FR 的常闭触点，串联在控制回路里。电机长时间过载，主电路里的热元件发热，把它顶开，整个控制回路就断了，电机停下来。放在最前面，是为了一过载就把电截住，后面怎么按按钮都启动不了。"},
+   {n:3,name:"SB1 停止按钮",x:735,y:575,bx:788,by:578,say:"SB1 是停止按钮，用常闭触点，串联在回路里。平时它是通的，一按就断开，KM 线圈失电，电机停。停止按钮用常闭更安全，接线松脱了也会停。"},
+   {n:4,name:"SB2 启动按钮",x:735,y:705,bx:588,by:692,say:"SB2 是启动按钮，用常开触点。不按的时候这里是断开的，线圈没电，电机不转；按下去接通，电流才能走到线圈。"},
+   {n:5,name:"KM 自锁触点",x:807,y:718,bx:786,by:676,say:"这是 KM 的一对辅助常开触点，和启动按钮 SB2 并联。KM 一吸合它就跟着闭合，松开 SB2 以后，电流改从这条橙色线走，线圈仍然有电，这就叫自锁。必须并在 SB2 两端，这样松手后绕过的只是启动按钮，停止按钮和热继电器还串在回路里，照样能停。"},
+   {n:6,name:"KM 线圈",x:737,y:842,bx:688,by:842,say:"这是 KM 的线圈，接在控制回路最后，另一头回到 L2 相线。它一有电，主电路上三个主触点一起闭合，电机就转；上面任何一处断开，最后都是让它没电。"},
+   {n:7,name:"KM 主触点",x:488,y:625,bx:588,by:655,say:"KM 的三对主触点，串在主电路的每一相里，和线圈是同一个接触器。线圈有电它们一起闭合，电机得电；线圈没电它们一起断开。三对一起动作，电机不会缺相。"},
+   {n:8,name:"FR 热元件",x:464,y:727,bx:606,by:766,say:COMMON.FRheat}
+  ],
+  extras: [
+   {name:"QS 电源开关",x:265,y:415,say:COMMON.QS},
+   {name:"熔断器 FU",x:463,y:530,say:COMMON.FU},
+   {name:"电动机 M",x:470,y:900,say:COMMON.M}
+  ],
+  paths: [
+   {name:"绿线：主电路",color:"rgb(0,150,70)",say:"三相电源从 L1、L2、L3 进来，经过电源开关、熔断器、KM 的主触点、热继电器的热元件，最后到电机。KM 一吸合，这三条绿线就都有电流，电机转。",pts:[[[248,465],[414,465],[414,838]],[[250,412],[463,412],[463,838]],[[245,363],[511,363],[511,838]]]},
+   {name:"红线：按住 SB2 那一刻",color:"rgb(225,30,30)",say:"按住 SB2 的那一刻，控制电流从 L3 相线出发，经过熔断器、FR 常闭、SB1、按下去的 SB2，流过 KM 线圈，回到 L2。只要这一瞬间线圈有电，KM 就吸合了。",pts:[[[511,363],[735,363],[735,908],[638,908],[638,412]]]},
+   {name:"橙线：松手以后（自锁）",color:"rgb(255,130,0)",say:"松开 SB2 以后，SB2 那里又断了，但 KM 的辅助常开触点已经闭合，电流从这条橙色线绕过去，继续给线圈供电。这条线就是自锁线。",pts:[[[735,651],[807,651],[807,786],[736,786]]]}
+  ]
+},
+
+"02": {
+  tab: "02 双重互锁", img: "img/s02.png",
+  intro: ["双重互锁的可逆（正反转）控制", "左支路管正转，右支路管反转，两边完全对称。先把左支路从上往下点一遍，右支路照着理解就行。"],
+  items: [
+   {n:1,name:"控制回路熔断器",x:413,y:395,bx:455,by:372,say:"控制回路的熔断器。电从 L3 相线经过它进入控制回路，回路另一头回到 L2 相线，线圈两端是 380 伏。"},
+   {n:2,name:"FR 常闭触点",x:546,y:457,bx:578,by:458,say:"热继电器 FR 的常闭触点，串联着。电机过载时它断开，正反转两个支路同时没电，电机停。"},
+   {n:3,name:"SB3 停止按钮",x:546,y:529,bx:600,by:528,say:"SB3 是停止按钮，常闭，串在两个支路的公共部分。一按就断，KM1、KM2 都失电。"},
+   {n:4,name:"SB2 的常闭触点（按钮互锁）",x:546,y:626,bx:585,by:622,say:"这个常闭触点是反转启动按钮 SB2 的一对触点，虚线表示和右边的 SB2 是同一个按钮。它串在正转支路的最上面：如果有人同时按两个按钮，SB2 的常闭先断开，正转支路就走不通。这叫按钮互锁。"},
+   {n:5,name:"SB1 正转启动按钮",x:546,y:702,bx:520,by:670,say:"SB1 是正转启动按钮，常开。按下去，电流才进得去正转支路，KM1 线圈得电。"},
+   {n:6,name:"KM1 自锁触点",x:586,y:705,bx:614,by:636,say:"KM1 的辅助常开触点，和 SB1 并联。KM1 吸合后它闭合，松手以后电流从这里走，KM1 保持吸合，叫自锁。"},
+   {n:7,name:"KM2 常闭触点（接触器互锁）",x:546,y:792,bx:660,by:792,say:"这是反转接触器 KM2 的常闭触点，串在 KM1 线圈回路里。KM2 吸着的时候它断开，KM1 就吸不上，两个接触器不会同时吸合造成短路。这叫接触器互锁。"},
+   {n:8,name:"KM1 线圈",x:556,y:853,bx:512,by:853,say:"KM1 的线圈。它有电，主电路上 KM1 的主触点闭合，电机直接接三相，正转。"},
+   {n:9,name:"主电路对调两相",x:384,y:700,bx:410,by:790,say:"主电路里 KM2 的触点把两根相线对调了，所以 KM2 吸合时电机反转。KM1 和 KM2 绝不能同时吸合，否则两根相线直接连在一起，会短路。"}
+  ],
+  extras: [
+   {name:"右支路（反转）",x:747,y:765,say:"右支路是反转支路，和左支路完全对称：最上面是 SB1 的常闭触点，做按钮互锁；中间是反转启动按钮 SB2 和 KM2 自锁触点并联；下面是 KM1 的常闭触点，做接触器互锁；最后是 KM2 线圈。"},
+   {name:"QS 电源开关",x:235,y:430,say:COMMON.QS},
+   {name:"熔断器 FU",x:295,y:517,say:COMMON.FU},
+   {name:"KM1 主触点",x:283,y:615,say:"KM1 的主触点，三对，直接把三相接到电机，所以是正转。"},
+   {name:"KM2 主触点",x:410,y:615,say:"KM2 的主触点，其中两相是交叉接的，等于对调了两根电源线，所以吸合时电机反转。"},
+   {name:"FR 热元件",x:283,y:738,say:COMMON.FRheat},
+   {name:"电动机 M",x:280,y:862,say:COMMON.M}
+  ],
+  paths: [
+   {name:"绿线：主电路（KM1 吸合，正转）",color:"rgb(0,150,70)",say:"KM1 吸合时，三相电源经电源开关、熔断器、KM1 的主触点、热元件直接到电机，没有对调，所以电机正转。",pts:[[[168,465],[256,465],[256,800]],[[168,430],[283,430],[283,800]],[[168,395],[310,395],[310,800]]]},
+   {name:"红线：按 SB1 正转启动",color:"rgb(225,30,30)",say:"按 SB1 时，电流从 L3 相线经熔断器、FR、SB3，进入左支路，先过 SB2 的常闭触点，再过按下去的 SB1，再过 KM2 的常闭触点，流过 KM1 线圈，回到 L2。KM1 吸合，电机正转。",pts:[[[432,395],[546,395],[546,898],[451,898],[451,430]]]},
+   {name:"橙线：松手以后（KM1 自锁）",color:"rgb(255,130,0)",say:"松手后，电流从 KM1 的辅助常开触点这条橙线绕过 SB1，KM1 保持吸合。",pts:[[[546,657],[586,657],[586,753],[546,753]]]}
+  ]
+},
+
+"03": {
+  tab: "03 自动往返", img: "img/s03.png",
+  intro: ["工作台自动往返（行程控制）", "在正反转的基础上加了四个行程开关。先点编号 2 那根横线，再从左支路上往下点。"],
+  items: [
+   {n:1,name:"SB1 停止按钮",x:581,y:498,bx:545,by:498,say:"SB1 是停止按钮，常闭，串联。一按就断，正反转两个支路都没电，工作台停下。"},
+   {n:2,name:"停止按钮后面的横线",x:695,y:596,bx:640,by:580,say:"这根横线把电同时分给六个常开触点：左支路的启动按钮、KM1 自锁、SQ1 常开，右支路的启动按钮、KM2 自锁、SQ2 常开。这六个触点是并联的，任何一个闭合，都能让它所在的那条支路有电。"},
+   {n:3,name:"左支路启动按钮",x:581,y:648,bx:548,by:648,say:"左支路的启动按钮，常开。按下去，KM1 线圈得电，电机正转，工作台开始移动。"},
+   {n:4,name:"KM1 自锁触点",x:624,y:648,bx:645,by:672,say:"KM1 的辅助常开触点，和启动按钮并联。手松开以后电流从这里走，KM1 保持吸合，工作台一直走。"},
+   {n:5,name:"SQ1 常开触点",x:666,y:648,bx:690,by:650,say:"行程开关 SQ1 的常开触点，并联在左支路里。工作台撞到 SQ1，它闭合，左支路自动接通。所以它是让工作台自动往这边走的启动开关。"},
+   {n:6,name:"SQ2 常闭触点",x:581,y:718,bx:545,by:718,say:"行程开关 SQ2 的常闭触点，串联在左支路里。工作台走到这一头撞到 SQ2，它先断开，KM1 失电，电机停。然后 SQ2 的另一对触点闭合，接通右支路。"},
+   {n:7,name:"SQ4 常闭触点（极限保护）",x:581,y:772,bx:545,by:772,say:"SQ4 的常闭触点，串联在左支路里，是极限保护。如果 SQ1、SQ2 坏了不动作，工作台冲过头，撞上 SQ4，它把回路硬断开，防止工作台越位。右支路里的 SQ3 也是同样的作用。"},
+   {n:8,name:"KM2 常闭触点（互锁）",x:581,y:825,bx:545,by:826,say:"反转接触器 KM2 的常闭触点，串在 KM1 线圈回路里，是互锁。KM2 吸着时 KM1 吸不上。"},
+   {n:9,name:"KM1 线圈",x:580,y:900,bx:545,by:902,say:"KM1 的线圈。有电时主触点闭合，电机正转。"},
+   {n:10,name:"SQ2 常开触点（在右支路）",x:810,y:648,bx:850,by:650,say:"这是 SQ2 的常开触点，放在右支路里，和左支路里那个常闭触点是同一个行程开关。工作台撞到 SQ2，它的常闭先断开左支路，常开再闭合右支路，KM2 得电，电机自动反转。同一个开关的两对触点分放在两个支路里，就是为了到头时停这边、起对面。"}
+  ],
+  extras: [
+   {name:"右支路（KM2）",x:724,y:770,say:"右支路和左支路对称：启动按钮、KM2 自锁、SQ2 常开三者并联，后面串着 SQ1 常闭、SQ3 常闭、KM1 常闭，最后是 KM2 线圈。工作台撞到 SQ1，就停左支路、起右支路。"},
+   {name:"SQ3 常闭触点（极限保护）",x:724,y:790,say:"SQ3 的常闭触点，右支路的极限保护。SQ1、SQ2 失灵时，工作台撞上 SQ3，把右支路断开。"},
+   {name:"QS 电源开关",x:165,y:455,say:COMMON.QS},
+   {name:"熔断器 FU",x:333,y:520,say:COMMON.FU},
+   {name:"KM1 主触点",x:325,y:655,say:"KM1 的主触点，直接把三相接到电机，正转。"},
+   {name:"KM2 主触点",x:450,y:655,say:"KM2 的主触点，两相交叉对调，所以吸合时电机反转。"},
+   {name:"电动机 M1",x:333,y:875,say:COMMON.M}
+  ],
+  paths: [
+   {name:"红线：按启动按钮（左支路）",color:"rgb(225,30,30)",say:"按启动按钮时，电流从 L3 相线下来，经过 SB1、启动按钮，再经过 SQ2 常闭、SQ4 常闭、KM2 常闭，流过 KM1 线圈，回到 L2 相线。",pts:[[[482,372],[581,372],[581,942],[535,942],[535,419]]]},
+   {name:"橙线：松手以后（KM1 自锁）",color:"rgb(255,130,0)",say:"松手后，电流从 KM1 自锁触点这条橙线走，KM1 保持吸合。",pts:[[[581,596],[624,596],[624,697],[581,697]]]},
+   {name:"紫线：撞到行程开关时（自动换向）",color:"rgb(150,20,200)",say:"工作台撞到 SQ2，SQ2 的常开触点闭合，电流走这条紫线进入右支路，再经过 SQ1 常闭、SQ3 常闭、KM1 常闭，流过 KM2 线圈，电机反转。",pts:[[[724,596],[810,596],[810,697],[724,697]]]}
+  ]
+},
+
+"04": {
+  tab: "04 自耦降压", img: "img/s04.png",
+  intro: ["自耦变压器降压启动（时间继电器自动切换）", "先启动降压，时间一到自动切到全压。按编号 1 到 9 的顺序点一遍就是全过程。"],
+  items: [
+   {n:1,name:"FR 常闭触点",x:609,y:572,bx:640,by:572,say:"热继电器 FR 的常闭触点，串联。电机过载时断开，整个控制回路断电。"},
+   {n:2,name:"SB1 停止按钮",x:609,y:633,bx:640,by:668,say:"SB1 是停止按钮，常闭。一按就断，KM1、KA、KM2 全部失电，电机停。"},
+   {n:3,name:"SB2 启动按钮",x:610,y:738,bx:572,by:712,say:"SB2 是启动按钮，常开。按下去，KM1 线圈回路接通，启动开始。"},
+   {n:4,name:"KM1 自锁触点",x:682,y:740,bx:712,by:745,say:"KM1 的辅助常开触点，和 SB2 并联。KM1 吸合后它闭合，松手后电流从这里走，KM1 保持吸合。"},
+   {n:5,name:"KT 线圈",x:680,y:875,bx:712,by:800,say:"时间继电器 KT 的线圈，从 KM1 自锁触点下面引出。所以只有 KM1 吸合、已经启动了，KT 才开始计时。时间到了，它的延时触点动作，去接通 KA。"},
+   {n:6,name:"KA 常闭触点",x:610,y:818,bx:574,by:818,say:"中间继电器 KA 的常闭触点，串联在 KM1 线圈回路里。KA 一吸合它就断开，KM1 失电，自耦变压器退出。它的作用是在启动结束时把启动接触器撤掉。"},
+   {n:7,name:"KM1 线圈（启动）",x:610,y:875,bx:580,by:845,say:"KM1 是启动接触器。它吸合，主触点把电机接到自耦变压器的抽头上，电机降压启动。"},
+   {n:8,name:"KT 延时闭合触点",x:748,y:743,bx:775,by:743,say:"KT 的延时闭合常开触点。KT 通电以后，要等设定的时间到了它才闭合，KA 线圈得电。它旁边并联的是 KA 自己的常开触点，KA 吸合后靠它保持。"},
+   {n:9,name:"KA 常开 + KM1 常闭 → KM2",x:818,y:790,bx:848,by:850,say:"这一路串着 KA 的常开触点和 KM1 的常闭触点，后面是 KM2 线圈。KA 吸合，常开闭合；同时 KM1 已经释放，它的常闭复位，KM2 才能吸合。串 KM1 常闭是为了保证先断开启动接触器，再接通运行接触器，两个不会同时吸合。"}
+  ],
+  extras: [
+   {name:"KA 线圈",x:675,y:875,say:"KA 是中间继电器，在启动结束时动作：常闭触点断开 KM1，常开触点接通 KM2，相当于一个切换开关。"},
+   {name:"KM2 线圈（运行）",x:818,y:875,say:"KM2 是运行接触器。它吸合，主触点把电机直接接到三相电源上，全压运行。"},
+   {name:"KM2 主触点",x:355,y:660,say:"KM2 的主触点，接在电源侧。闭合时电机直接接电源，全压运行。"},
+   {name:"自耦变压器 T",x:440,y:700,say:"自耦变压器 T。它的抽头接到电机，抽头电压比电源电压低，所以电机降压启动。抽头有几个，可以选择启动电压。"},
+   {name:"KM1 主触点",x:490,y:660,say:"KM1 的主触点，把自耦变压器的抽头和电机接通。"},
+   {name:"KM1 星点触点",x:455,y:830,say:"KM1 的另一组触点，把自耦变压器的三个首端短接成星形，变压器才能工作。"},
+   {name:"FR 热元件",x:362,y:716,say:COMMON.FRheat},
+   {name:"电动机 M",x:352,y:890,say:COMMON.M},
+   {name:"QS 电源开关",x:310,y:480,say:COMMON.QS},
+   {name:"熔断器 FU",x:512,y:503,say:COMMON.FU},
+   {name:"控制变压器 Tr",x:660,y:505,say:"Tr 是控制变压器，把电压降下来给指示灯电路用。"},
+   {name:"指示灯 HL1、HL2、HL3",x:785,y:632,say:"三个指示灯：HL1 是电源指示，有电就亮；HL2 是降压启动指示，KM1 吸合时亮；HL3 是全压运行指示，KM2 吸合时亮。"}
+  ],
+  paths: [
+   {name:"红线：按 SB2 启动",color:"rgb(225,30,30)",say:"按住 SB2 时，电流从 L3 相线经熔断器、FR、SB1、SB2，经过 KA 常闭，流过 KM1 线圈回到 L2。KM1 吸合，电机降压启动。",pts:[[[470,489],[609,489],[609,910],[547,910],[547,518]]]},
+   {name:"橙线：松手以后（KM1 自锁）",color:"rgb(255,130,0)",say:"松手后，电流从 KM1 的辅助常开触点这条橙线走，KM1 保持吸合。",pts:[[[609,698],[682,698],[682,782],[609,782]]]},
+   {name:"紫线：KT 线圈得电计时",color:"rgb(150,20,200)",say:"同时，电流从这个节点往下流过 KT 线圈，KT 开始计时。",pts:[[[682,782],[682,910]]]},
+   {name:"蓝线：时间到，KA 吸合",color:"rgb(0,90,230)",say:"时间到了，KT 的延时触点闭合，电流走这条蓝线，KA 线圈得电。",pts:[[[609,698],[748,698],[748,910]]]},
+   {name:"绿线：KM2 吸合，全压运行",color:"rgb(0,150,70)",say:"KA 吸合后，它的常开触点闭合，电流走这条绿线，经过 KM1 常闭，KM2 线圈得电，电机全压运行。",pts:[[[609,698],[818,698],[818,910]]]}
+  ]
+},
+
+"05": {
+  tab: "05 按钮星角", img: "img/s05.png",
+  intro: ["接触器控制的 Y—△ 降压启动（按钮切换）", "先按启动按钮接成星形，再按切换按钮换成三角形。按编号顺序点一遍。"],
+  items: [
+   {n:1,name:"FR 常闭触点",x:642,y:428,bx:668,by:428,say:"热继电器 FR 的常闭触点，串联。电机过载时断开，KM、KMY、KM△ 全部失电。"},
+   {n:2,name:"SB3 停止按钮",x:642,y:483,bx:610,by:465,say:"SB3 是停止按钮，常闭。一按就断，三个接触器全部释放。"},
+   {n:3,name:"启动按钮 SB1",x:642,y:556,bx:600,by:612,say:"SB1 是启动按钮，常开。按下去，KM 和 KMY 两个线圈同时得电，电机接成星形启动。"},
+   {n:4,name:"KM 自锁触点",x:707,y:556,bx:768,by:552,say:"KM 的辅助常开触点，和启动按钮并联。松手以后 KM 保持吸合，一直给电机供着三相电源。"},
+   {n:5,name:"KM 线圈",x:642,y:840,bx:612,by:700,say:"KM 是电源接触器，线圈直接接在横线上。所以从启动到运行它一直吸合。"},
+   {n:6,name:"KM△ 常闭触点（互锁）",x:707,y:628,bx:672,by:612,say:"KM△ 的常闭触点，串在 KMY 线圈回路里，是互锁。KM△ 吸着时 KMY 吸不上。因为 KMY 和 KM△ 同时吸合，电源会被短接。"},
+   {n:7,name:"SB2 常闭触点",x:707,y:736,bx:672,by:740,say:"切换按钮 SB2 的常闭触点，串在 KMY 回路里。按下 SB2，它先断开，KMY 失电，电机先脱离星形。"},
+   {n:8,name:"KMY 线圈（星形）",x:707,y:840,bx:737,by:800,say:"KMY 是星形接触器。它吸合，主触点把电机 U2、V2、W2 短接在一起，电机接成星形，降压启动。"},
+   {n:9,name:"SB2 常开触点",x:767,y:736,bx:735,by:740,say:"SB2 的常开触点，在 KMY 回路断开以后才闭合，接通 KM△ 回路。"},
+   {n:10,name:"KM△ 自锁触点",x:814,y:766,bx:848,by:735,say:"KM△ 的辅助常开触点，和 SB2 的常开触点并联。松手以后 KM△ 保持吸合。"},
+   {n:11,name:"KMY 常闭触点（互锁）",x:767,y:628,bx:806,by:610,say:"KMY 的常闭触点，串在 KM△ 线圈回路里，是互锁。KMY 吸着时 KM△ 吸不上。"},
+   {n:12,name:"KM△ 线圈（三角形）",x:767,y:840,bx:805,by:840,say:"KM△ 是三角形接触器。它吸合，主触点把 U2、V2、W2 分别和 W1、U1、V1 接通，电机接成三角形，全压运行。"}
+  ],
+  extras: [
+   {name:"KM 主触点",x:400,y:545,say:"KM 的主触点，把三相电源接到电机 U1、V1、W1。"},
+   {name:"KMY 主触点（星形）",x:350,y:900,say:"KMY 的主触点，三个，把电机 U2、V2、W2 三个端子短接，就是星形接法。这时每相电压降到 220 伏，启动电流是直接启动的三分之一。"},
+   {name:"KM△ 主触点（三角形）",x:470,y:740,say:"KM△ 的主触点，把 U2、V2、W2 分别接到 W1、U1、V1，就是三角形接法。这时每相电压是 380 伏，全压运行。"},
+   {name:"FR 热元件",x:342,y:599,say:COMMON.FRheat},
+   {name:"电动机 M（六个出线端）",x:330,y:750,say:"电动机有六个出线端。U1、V1、W1 接电源，U2、V2、W2 用来接成星形或三角形。星三角启动只用于正常运行时是三角形接法的电机。"},
+   {name:"QS 电源开关",x:185,y:445,say:COMMON.QS},
+   {name:"熔断器 FU",x:300,y:400,say:COMMON.FU}
+  ],
+  paths: [
+   {name:"红线：按启动按钮，KM 吸合",color:"rgb(225,30,30)",say:"按启动按钮时，电流经 FR、SB3、启动按钮流过 KM 线圈。KM 吸合。",pts:[[[642,395],[642,879],[566,879],[566,439]]]},
+   {name:"橙线：松手以后（KM 自锁）",color:"rgb(255,130,0)",say:"松手后，电流从 KM 自锁触点这条橙线走。",pts:[[[642,533],[707,533],[707,579],[642,579]]]},
+   {name:"紫线：KMY 吸合，星形启动",color:"rgb(150,20,200)",say:"同时，电流从横线走这条紫线，经过 KM△ 常闭、SB2 常闭，流过 KMY 线圈，电机接成星形启动。",pts:[[[642,579],[707,579],[707,879]]]},
+   {name:"绿线：切换后 KM△ 吸合，三角形运行",color:"rgb(0,150,70)",say:"按切换按钮后，KMY 回路先断，电流改走这条绿线，经过 KMY 常闭、SB2 常开，流过 KM△ 线圈，电机接成三角形全压运行。",pts:[[[642,579],[767,579],[767,879]],[[767,719],[814,719],[814,814],[767,814]]]}
+  ]
+},
+
+"06": {
+  tab: "06 时间继电器星角", img: "img/s06.png",
+  intro: ["时间继电器控制的 Y—△ 降压启动（自动切换）", "和 05 只差一点：没有切换按钮，由时间继电器到时间自动切换。"],
+  items: [
+   {n:1,name:"FR 常闭触点",x:624,y:345,bx:650,by:345,say:"热继电器 FR 的常闭触点，串联。电机过载时断开，整个控制回路断电。"},
+   {n:2,name:"SB 停止按钮",x:624,y:425,bx:648,by:425,say:"SB 是停止按钮，常闭。一按就断，KM、KMY、KT、KM△ 全部失电。"},
+   {n:3,name:"SB1 启动按钮",x:624,y:556,bx:600,by:578,say:"SB1 是启动按钮，常开。按下去，KM、KT、KMY 三个线圈同时得电。"},
+   {n:4,name:"KM 自锁触点",x:684,y:548,bx:712,by:548,say:"KM 的辅助常开触点，和启动按钮并联。松手以后 KM 保持吸合。"},
+   {n:5,name:"KM 线圈",x:624,y:840,bx:598,by:700,say:"KM 是电源接触器，线圈直接接在横线上，从启动到运行一直吸合。"},
+   {n:6,name:"KM△ 常闭触点（互锁）",x:684,y:640,bx:652,by:632,say:"KM△ 的常闭触点，串在 KMY 回路里，是互锁。KM△ 吸着时 KMY 吸不上，防止电源被短接。"},
+   {n:7,name:"KT 延时断开的常闭触点",x:684,y:768,bx:712,by:770,say:"KT 延时断开的常闭触点，串在 KMY 线圈回路里。刚启动时它是闭合的，KMY 能吸合；KT 计时时间到了它才断开，KMY 失电，电机脱离星形。"},
+   {n:8,name:"KMY 线圈（星形）",x:684,y:840,bx:712,by:805,say:"KMY 是星形接触器。它吸合，主触点把 U2、V2、W2 短接，电机接成星形启动。"},
+   {n:9,name:"KT 线圈",x:733,y:840,bx:760,by:805,say:"KT 的线圈从这个节点直接引出。所以一启动它就得电，开始给启动过程计时。"},
+   {n:10,name:"KMY 常闭触点（互锁）",x:795,y:665,bx:850,by:662,say:"KMY 的常闭触点，串在 KM△ 线圈回路里，是互锁。KMY 吸着时 KM△ 吸不上。"},
+   {n:11,name:"KT 延时闭合的常开触点",x:795,y:768,bx:838,by:768,say:"KT 延时闭合的常开触点，串在 KM△ 线圈回路里。时间到了它才闭合，KM△ 得电。它和编号 7 那个触点是同一个时间继电器的两对触点，所以能保证先断开星形，再接通三角形。"},
+   {n:12,name:"KM△ 线圈（三角形）",x:795,y:840,bx:845,by:840,say:"KM△ 是三角形接触器。它吸合，电机接成三角形全压运行。它吸合后，编号 6 那对常闭触点断开，KT 线圈失电，计时结束。"}
+  ],
+  extras: [
+   {name:"KM 主触点",x:430,y:415,say:"KM 的主触点，把三相电源接到电机 U1、V1、W1。"},
+   {name:"KMY 主触点（星形）",x:335,y:765,say:"KMY 的主触点，把 U2、V2、W2 短接成星形。"},
+   {name:"KM△ 主触点（三角形）",x:475,y:545,say:"KM△ 的主触点，把 U2、V2、W2 接成三角形。"},
+   {name:"FR 热元件",x:320,y:495,say:COMMON.FRheat},
+   {name:"电动机 M",x:400,y:655,say:COMMON.M},
+   {name:"QS 电源开关",x:222,y:320,say:COMMON.QS},
+   {name:"熔断器 FU",x:312,y:300,say:COMMON.FU}
+  ],
+  paths: [
+   {name:"红线：按启动按钮，KM 吸合",color:"rgb(225,30,30)",say:"按启动按钮时，电流经 FR、SB、启动按钮流过 KM 线圈。KM 吸合。",pts:[[[624,290],[624,861],[570,861],[570,320]]]},
+   {name:"橙线：松手以后（KM 自锁）",color:"rgb(255,130,0)",say:"松手后，电流从 KM 自锁触点这条橙线走。",pts:[[[624,495],[684,495],[684,604],[624,604]]]},
+   {name:"紫线：KMY 吸合，星形启动",color:"rgb(150,20,200)",say:"同时，电流走这条紫线，经过 KM△ 常闭、KT 常闭，流过 KMY 线圈，电机接成星形启动。",pts:[[[624,604],[684,604],[684,861]]]},
+   {name:"蓝线：KT 线圈得电计时",color:"rgb(0,90,230)",say:"电流从这个节点走蓝线流过 KT 线圈，KT 开始计时。",pts:[[[684,720],[733,720],[733,861]]]},
+   {name:"绿线：时间到，KM△ 吸合",color:"rgb(0,150,70)",say:"时间到了，KT 常闭先断开 KMY，电流改走这条绿线，经过 KMY 常闭、KT 常开，流过 KM△ 线圈，电机接成三角形。",pts:[[[624,604],[795,604],[795,861]]]}
+  ]
+},
+
+"07": {
+  tab: "07 机械制动", img: "img/s07.png",
+  intro: ["机械制动（电磁抱闸，断电抱闸）", "控制电路和 01 一样，关键是蓝色的抱闸线圈接在哪。"],
+  items: [
+   {n:1,name:"控制回路熔断器",x:595,y:82,bx:540,by:60,say:"控制回路的熔断器。电从 L3 相线经过它进入控制回路，回路另一头回到 L2 相线。"},
+   {n:2,name:"SB1 停止按钮",x:757,y:195,bx:790,by:195,say:"SB1 是停止按钮，常闭，串联。一按就断，KM 失电，电机和抱闸线圈同时断电。"},
+   {n:3,name:"SB2 启动按钮",x:757,y:342,bx:622,by:310,say:"SB2 是启动按钮，常开。按下去，KM 线圈得电。"},
+   {n:4,name:"KM 自锁触点",x:830,y:349,bx:810,by:252,say:"KM 的辅助常开触点，和启动按钮并联。松手以后 KM 保持吸合。"},
+   {n:5,name:"KM 线圈",x:759,y:473,bx:700,by:472,say:"KM 的线圈。它有电，主触点闭合，电机和抱闸线圈同时得电。"},
+   {n:6,name:"FR 常闭触点",x:660,y:262,bx:625,by:262,say:"热继电器 FR 的常闭触点。这个图把它画在回路的另一头，但它还是串联在回路里，过载时一样断开整个回路。"},
+   {n:7,name:"电磁抱闸线圈",x:722,y:600,bx:660,by:615,say:"这是电磁抱闸的线圈，就是那根蓝线。它并接在电机的 V、W 两相上，而且接在 KM 主触点的后面。所以 KM 一吸合，电机有电，它也有电，把闸瓦吸开；KM 一断，电机没电，它也没电，弹簧把闸瓦压紧闸轮，电机立即停。"}
+  ],
+  extras: [
+   {name:"衔铁",x:722,y:662,say:"衔铁是电磁铁的活动铁芯。线圈通电把它吸上去，带动杠杆；断电后放下来。"},
+   {name:"杠杆",x:720,y:765,say:"杠杆把衔铁的动作传给闸瓦。"},
+   {name:"弹簧",x:722,y:835,say:"线圈断电以后，弹簧把闸瓦压紧在闸轮上。"},
+   {name:"闸瓦",x:640,y:862,say:"闸瓦是刹车片，抱紧闸轮就产生摩擦力，让电机停。"},
+   {name:"闸轮",x:652,y:885,say:"闸轮装在电机轴上，跟着电机一起转。"},
+   {name:"KM 主触点",x:488,y:340,say:"KM 的三对主触点，同时管着电机和抱闸线圈。"},
+   {name:"FR 热元件",x:486,y:446,say:COMMON.FRheat},
+   {name:"电动机 M",x:490,y:870,say:COMMON.M},
+   {name:"QS 电源开关",x:300,y:245,say:COMMON.QS},
+   {name:"熔断器 FU",x:485,y:250,say:COMMON.FU}
+  ],
+  paths: [
+   {name:"绿线：主电路",color:"rgb(0,150,70)",say:"KM 吸合时，三相电源经电源开关、熔断器、KM 主触点、热元件到电机。",pts:[[[328,184],[440,184],[440,790]],[[329,131],[487,131],[487,790]],[[325,82],[537,82],[537,790]]]},
+   {name:"红线：按 SB2 启动",color:"rgb(225,30,30)",say:"按 SB2 时，电流经熔断器、SB1、SB2、KM 线圈，再经过 FR 常闭回到 L2。KM 吸合。",pts:[[[490,82],[757,82],[757,509],[660,509],[660,131]]]},
+   {name:"橙线：松手以后（KM 自锁）",color:"rgb(255,130,0)",say:"松手后，电流从 KM 自锁触点这条橙线走。",pts:[[[757,282],[830,282],[830,417],[757,417]]]},
+   {name:"蓝线：抱闸线圈的接法",color:"rgb(0,90,230)",say:"抱闸线圈的两个头分别接在电机的 V 相和 W 相上，而且是在 KM 主触点后面。所以它和电机同时有电、同时断电。",pts:[[[537,545],[722,545],[722,601],[488,601]]]}
+  ]
+},
+
+"08": {
+  tab: "08 反接制动", img: "img/s08.png",
+  intro: ["反接制动（速度继电器控制）", "停车时把两根电源线对调，让电机快点停；转速降下来再自动断开。"],
+  items: [
+   {n:1,name:"FR 常闭触点",x:653,y:390,bx:780,by:392,say:"热继电器 FR 的常闭触点，串联。电机过载时断开，两条回路都断电。"},
+   {n:2,name:"SB1 常闭触点",x:653,y:508,bx:598,by:490,say:"停止按钮 SB1 的常闭触点，串在正转回路里。按下 SB1，它先断开，KM1 失电，电机脱离正转电源。"},
+   {n:3,name:"SB2 启动按钮",x:653,y:617,bx:590,by:598,say:"SB2 是启动按钮，常开。按下去，KM1 线圈得电，电机正转。"},
+   {n:4,name:"SB1 常开触点",x:850,y:519,bx:818,by:466,say:"SB1 的常开触点，和左边的常闭是同一个按钮。按下去，常闭先断，常开后合，接通制动支路。"},
+   {n:5,name:"SR 速度继电器常开触点",x:778,y:634,bx:758,by:668,say:"速度继电器 SR 的常开触点。电机转速高于每分钟 120 转它闭合，低于 120 转它断开。所以只有电机还在转，制动才能进行；转速降下来，它自动断开，制动自动结束。"},
+   {n:6,name:"KM2 常闭触点（互锁）",x:655,y:733,bx:600,by:772,say:"反转接触器 KM2 的常闭触点，串在 KM1 线圈回路里，是互锁。KM2 吸着时 KM1 吸不上。"},
+   {n:7,name:"KM1 线圈",x:656,y:800,bx:604,by:852,say:"KM1 的线圈。它有电，主触点直接把三相接到电机，电机正转。"},
+   {n:8,name:"KM1 常闭触点（互锁）",x:778,y:733,bx:815,by:765,say:"KM1 的常闭触点，串在 KM2 线圈回路里，是互锁。KM1 没释放，KM2 就吸不上。"},
+   {n:9,name:"KM2 线圈",x:780,y:800,bx:818,by:830,say:"KM2 是反接制动接触器。它吸合，主触点经过电阻把两相对调接到电机上，电机得到反向的力矩，很快减速。"},
+   {n:10,name:"限流电阻 R",x:466,y:492,bx:470,by:440,say:"这三个电阻 R 串在 KM2 的主触点里。反接时电流非常大，用它们限流。"}
+  ],
+  extras: [
+   {name:"SR 速度继电器",x:420,y:890,say:"SR 是速度继电器，和电机轴连在一起测转速。转速高于每分钟 120 转，常开触点闭合；低于 120 转，常开触点断开。"},
+   {name:"KM1 主触点",x:265,y:600,say:"KM1 的主触点，直接把三相接到电机，正转。"},
+   {name:"KM2 主触点",x:445,y:590,say:"KM2 的主触点，两相交叉对调，并且串着电阻。所以吸合时电机被反接，产生制动力矩。"},
+   {name:"FR 热元件",x:300,y:745,say:COMMON.FRheat},
+   {name:"电动机 M",x:305,y:920,say:COMMON.M},
+   {name:"QS 电源开关",x:270,y:165,say:COMMON.QS},
+   {name:"熔断器 FU",x:295,y:260,say:COMMON.FU}
+  ],
+  paths: [
+   {name:"红线：按 SB2 启动，KM1 吸合",color:"rgb(225,30,30)",say:"按 SB2 时，电流经熔断器、FR、SB1 常闭、SB2、KM2 常闭，流过 KM1 线圈。KM1 吸合，电机正转。",pts:[[[475,318],[653,318],[653,836],[556,836],[556,355]]]},
+   {name:"橙线：松手以后（KM1 自锁）",color:"rgb(255,130,0)",say:"松手后，电流从 KM1 自锁触点这条橙线走。",pts:[[[653,567],[726,567],[726,680],[653,680]]]},
+   {name:"紫线：按 SB1 制动，KM2 吸合",color:"rgb(150,20,200)",say:"按 SB1 制动时，电流从 FR 下面这个节点走右边，经过 SB1 的常开触点，再经过 SR 常开、KM1 常闭，流过 KM2 线圈。电机被反接，很快减速；转速低于每分钟 120 转，SR 断开，KM2 释放。",pts:[[[653,438],[850,438],[850,558],[778,558],[778,836]]]}
+  ]
+},
+
+"09": {
+  tab: "09 能耗制动", img: "img/s09.png",
+  intro: ["能耗制动（直流通入定子，时间继电器控制）", "切断交流以后往定子里通直流，让电机平稳停下；通多久由时间继电器决定。"],
+  items: [
+   {n:1,name:"FR 常闭触点",x:681,y:372,bx:795,by:372,say:"热继电器 FR 的常闭触点，串联。电机过载时断开，整个控制回路断电。"},
+   {n:2,name:"SB1 常闭触点",x:681,y:572,bx:725,by:524,say:"停止按钮 SB1 的常闭触点，串在运行回路里。按下 SB1，它先断开，KM1 失电，电机脱离交流电源。"},
+   {n:3,name:"SB2 启动按钮",x:681,y:636,bx:655,by:560,say:"SB2 是启动按钮，常开。按下去，KM1 线圈得电，电机运行。"},
+   {n:4,name:"SB1 常开触点",x:828,y:501,bx:805,by:580,say:"SB1 的常开触点，和左边的常闭是同一个按钮。按下去，常闭先断，常开后合，接通制动支路。"},
+   {n:5,name:"KM1 自锁触点",x:745,y:637,bx:712,by:566,say:"KM1 的辅助常开触点，和启动按钮并联。松手以后 KM1 保持吸合。"},
+   {n:6,name:"KT 延时断开的常闭触点",x:779,y:630,bx:806,by:600,say:"KT 延时断开的常闭触点，串在 KM2 线圈回路里。刚开始制动时它是闭合的，KM2 能吸合；时间到了它断开，KM2 失电，直流切断，制动结束。"},
+   {n:7,name:"KM2 常闭触点（互锁）",x:681,y:769,bx:655,by:718,say:"KM2 的常闭触点，串在 KM1 线圈回路里，是互锁。通直流的时候，交流不能接入。"},
+   {n:8,name:"KM1 常闭触点（互锁）",x:779,y:769,bx:850,by:718,say:"KM1 的常闭触点，串在 KM2 线圈回路里，是互锁。保证交流电源断开以后，直流才能接入。"},
+   {n:9,name:"KM1 线圈（运行）",x:681,y:857,bx:655,by:812,say:"KM1 是运行接触器。它吸合，主触点把电机接到三相交流电源上。"},
+   {n:10,name:"KM2 线圈（制动）",x:779,y:857,bx:732,by:852,say:"KM2 是制动接触器。它吸合，主触点把整流出来的直流送进电机定子。"},
+   {n:11,name:"KT 线圈",x:828,y:857,bx:806,by:815,say:"KT 线圈和 KM2 同时得电，给制动过程计时。时间到了，它的延时常闭触点断开，制动结束。"},
+   {n:12,name:"KM2 主触点（接通整流电路）",x:560,y:500,bx:606,by:735,say:"KM2 的主触点，把整流电路接通，直流电送进电机定子的两相绕组，产生制动力矩。"}
+  ],
+  extras: [
+   {name:"控制变压器 T",x:545,y:445,say:"控制变压器 T，给整流电路提供合适的交流电压。"},
+   {name:"整流桥",x:575,y:520,say:"整流桥把交流电变成直流电。"},
+   {name:"可调电阻 RP",x:495,y:590,say:"RP 是可调电阻，用来调节直流电流的大小，也就是制动力矩。"},
+   {name:"KM1 主触点",x:455,y:430,say:"KM1 的主触点，把三相交流电源接到电机。"},
+   {name:"FR 热元件",x:410,y:455,say:COMMON.FRheat},
+   {name:"电动机 M",x:395,y:790,say:COMMON.M},
+   {name:"QS 电源开关",x:225,y:310,say:COMMON.QS},
+   {name:"熔断器 FU",x:350,y:320,say:COMMON.FU}
+  ],
+  paths: [
+   {name:"红线：按 SB2 启动，KM1 吸合",color:"rgb(225,30,30)",say:"按 SB2 时，电流经熔断器、FR、SB1 常闭、SB2、KM2 常闭，流过 KM1 线圈。KM1 吸合，电机运行。",pts:[[[500,314],[681,314],[681,892],[627,892],[627,349]]]},
+   {name:"橙线：松手以后（KM1 自锁）",color:"rgb(255,130,0)",say:"松手后，电流从 KM1 自锁触点这条橙线走。",pts:[[[681,596],[745,596],[745,678],[681,678]]]},
+   {name:"紫线：按 SB1 制动，KM2 吸合",color:"rgb(150,20,200)",say:"按 SB1 制动时，电流从 FR 下面这个节点走右边，经过 SB1 的常开触点，再经过 KT 常闭、KM1 常闭，流过 KM2 线圈。直流进入定子，电机开始制动。",pts:[[[681,448],[828,448],[828,512],[779,512],[779,892]]]},
+   {name:"蓝线：KT 线圈得电计时",color:"rgb(0,90,230)",say:"同时，电流走这条蓝线流过 KT 线圈，开始计时。时间到，KT 常闭断开，制动结束。",pts:[[[828,512],[828,892]]]}
+  ]
+}
+};
+
+// 实物接线表：img 为空时只显示接线表（软件里该电路没有接线演示页）
+var WIRE = {
+"01": {
+  img: "img/ans01_s02.png",
+  cap: "软件“接线”页点“答案”画出的实物接线图（原图）",
+  say: "接线顺序：三相电源先进断路器上端，断路器下端接三个熔断器，熔断器下端接接触器上端，接触器下端接热继电器上端，热继电器下端经端子排接电机。控制回路从熔断器下端取两相电，再经两个小熔断器，依次串热继电器常闭、停止按钮、启动按钮，最后到接触器线圈；接触器的辅助常开触点并接在启动按钮两端，这就是自锁。",
+  rows: [
+    ["电源 L1 L2 L3", "断路器 QS 上端 1/3/5", "先接电源侧"],
+    ["QS 下端 2/4/6", "FU1 三个熔断器上端", "每相一个，做短路保护"],
+    ["FU1 下端", "接触器 KM 上端 L1 L2 L3", "黄绿红按相序对应，不要接乱"],
+    ["KM 下端 T1 T2 T3", "热继电器 FR 主触点上端", "热元件串在主电路里感受电流"],
+    ["FR 主触点下端", "接线端子排，再引到电机 U V W", "端子排是转接点"],
+    ["FU1 下端（取 L2、L3 两相）", "FU2 两个熔断器上端", "控制回路的电从主电路取"],
+    ["FU2 下端", "FR 常闭 95 进线", "控制回路第一道保护"],
+    ["FR 常闭 96 出线", "SB1 停止按钮（常闭）进线", "停止按钮串在回路里"],
+    ["SB1 常闭出线", "SB2 启动按钮（常开）进线", "启动按钮是常开"],
+    ["SB2 常开出线", "KM 线圈 A1", "线圈一端"],
+    ["KM 线圈 A2", "FU2 另一个熔断器下端（回另一相）", "线圈另一端，回路闭合"],
+    ["KM 辅助常开 13", "SB2 进线侧", "自锁：和 SB2 并接"],
+    ["KM 辅助常开 14", "SB2 出线侧（也就是 KM 线圈 A1）", "松手后电流从这里绕过 SB2"]
+  ]
+},
+"02": {
+  img: "img/ans02_s02.png",
+  cap: "软件“接线”页点“答案”画出的实物接线图（原图）",
+  say: "两个接触器并联着接同一个电机：KM1 直接对应三相，所以正转；KM2 的出线有两根交叉后再接到热继电器上端，等于把两根电源线对调，所以反转。控制回路里两个支路完全对称：每支路最上面串着对方启动按钮的常闭触点，做按钮互锁；线圈前面串着对方接触器的常闭触点，做接触器互锁；自己的辅助常开触点并在自己的启动按钮两端，做自锁。",
+  rows: [
+    ["电源 L1 L2 L3", "断路器 QS 上端", "电源侧"],
+    ["QS 下端", "FU1 三个熔断器上端", ""],
+    ["FU1 下端", "KM1 上端 L1 L2 L3", "正转接触器，直接对应"],
+    ["FU1 下端", "KM2 上端 L1 L2 L3", "反转接触器，进线可以和 KM1 共用"],
+    ["KM1 下端 T1 T2 T3", "FR 主触点上端（三根一一对应）", "正转通路"],
+    ["KM2 下端 T1 T2 T3", "FR 主触点上端（其中两根交叉）", "关键：交叉两根＝对调两相＝反转"],
+    ["FR 主触点下端", "端子排，再引到电机", ""],
+    ["FU1 下端（取两相）", "FU2 两个熔断器上端", "控制电源"],
+    ["FU2 下端", "FR 常闭 95 进线", ""],
+    ["FR 常闭 96 出线", "SB3 停止按钮（常闭）进线", "两个支路共用这一段"],
+    ["SB3 常闭出线", "分成两路：一路进 SB2 的常闭触点，一路进 SB1 的常闭触点", "分左右支路"],
+    ["SB2 常闭（按钮互锁）出线", "SB1 正转启动按钮（常开）进线", "按 SB1 时先断开反转支路"],
+    ["SB1 常开出线", "KM2 常闭 21 进线", "接触器互锁"],
+    ["KM2 常闭 22 出线", "KM1 线圈 A1", ""],
+    ["KM1 线圈 A2", "FU2 另一个熔断器下端（回另一相）", ""],
+    ["KM1 辅助常开 13 / 14", "并在 SB1 的进线与出线两端", "正转自锁"],
+    ["SB1 常闭（按钮互锁）出线", "SB2 反转启动按钮（常开）进线", "右支路"],
+    ["SB2 常开出线", "KM1 常闭 21 进线", "接触器互锁"],
+    ["KM1 常闭 22 出线", "KM2 线圈 A1", ""],
+    ["KM2 辅助常开 13 / 14", "并在 SB2 的进线与出线两端", "反转自锁"]
+  ]
+},
+"03": {
+  img: "",
+  cap: "软件里这个电路没有接线演示页，接线表和 02 一样，另加行程开关的线",
+  say: "主电路和双重互锁正反转完全一样，两个接触器加两根交叉线。多出来的是行程开关：每个行程开关有两对触点，常闭那对串在自己这一路里，常开那对并在对面那一路的启动按钮两端。另外两个极限保护开关 SQ3、SQ4 的常闭触点，分别串在两个支路里。",
+  rows: [
+    ["主电路", "与 02 完全相同：QS→FU1→KM1／KM2（出线交叉两根）→FR→电机", "照 02 的接线表接"],
+    ["控制回路公共段", "FU2→FR 常闭 95/96→SB1 停止（常闭）", "与 02 相同"],
+    ["SQ2 常闭（21/22）", "串在 KM1 这一路：接在启动按钮和 KM1 自锁之后、SQ4 之前", "工作台撞到 SQ2，先断这一路"],
+    ["SQ1 常闭（21/22）", "串在 KM2 那一路同样位置", ""],
+    ["SQ1 常开（13/14）", "并在 KM1 那一路的启动按钮两端", "撞到 SQ1，自动接通 KM1"],
+    ["SQ2 常开（13/14）", "并在 KM2 那一路的启动按钮两端", "撞到 SQ2，自动接通 KM2"],
+    ["SQ4 常闭（21/22）", "串在 KM1 这一路（SQ2 常闭之后）", "极限保护，防止越位"],
+    ["SQ3 常闭（21/22）", "串在 KM2 那一路", "极限保护"],
+    ["KM2 常闭 21/22", "串在 KM1 线圈回路", "接触器互锁"],
+    ["KM1 常闭 21/22", "串在 KM2 线圈回路", "接触器互锁"]
+  ]
+},
+"04": {
+  img: "",
+  cap: "软件里这个电路没有接线演示页，下面是按原理图整理的接线表",
+  say: "主电路多了自耦变压器：KM2 的主触点在电源侧，全压运行用；KM1 的主触点把变压器的抽头接到电机，降压启动用；KM1 还有一组触点把变压器的三个首端短接成星形。控制回路里 KM1 自锁后给时间继电器 KT 供电，KT 到时间接通中间继电器 KA，KA 断开 KM1、接通 KM2。",
+  rows: [
+    ["电源 L1 L2 L3", "QS 上端 → QS 下端 → FU → KM2 主触点上端", "KM2 是运行（全压）接触器"],
+    ["KM2 主触点下端", "FR 主触点上端 → 下端 → 电机", "全压运行时电流走这条"],
+    ["自耦变压器 T 抽头", "KM1 主触点上端", "抽头电压低，用来降压启动"],
+    ["KM1 主触点下端", "电机 U V W（与 FR 下端同一节点）", "降压启动时电流走这条"],
+    ["自耦变压器三个首端", "KM1 的另一组触点（短接成星形）", "变压器要星接才能工作"],
+    ["控制回路", "FU→FR 常闭→SB1 停止→SB2 启动∥KM1 自锁→KA 常闭→KM1 线圈", "启动支路"],
+    ["KM1 自锁触点下端节点", "KT 线圈", "KM1 一吸合，KT 开始计时"],
+    ["KT 延时闭合触点", "并联 KA 自锁触点后接 KA 线圈", "时间到，KA 吸合"],
+    ["KA 常开触点", "串 KM1 常闭后接 KM2 线圈", "先退 KM1，再上 KM2"],
+    ["指示灯", "HL1 直接接电源；HL2 经 KM1 常开；HL3 经 KM2 常开", "电源／降压／全压三种指示"]
+  ]
+},
+"05": {
+  img: "img/ans05_s02.png",
+  cap: "软件“接线”页点“答案”画出的实物接线图（原图）",
+  say: "三个接触器分工：KM 把三相电源送到电机 U1 V1 W1；KMY 把 U2 V2 W2 三个端子短接在一起，就是星形；KM△ 把 U2 V2 W2 分别接到 W1 U1 V1，就是三角形。所以 KMY 和 KM△ 的线绝对不能同时接通，控制回路里用对方的常闭触点互锁。",
+  rows: [
+    ["电源 L1 L2 L3", "QS → FU1 → KM 主触点上端", "KM 是电源接触器"],
+    ["KM 下端 T1 T2 T3", "FR 主触点上端 → 下端 → 电机 U1 V1 W1", "三相进电机"],
+    ["电机 U2 V2 W2", "KMY 主触点三个上端（三个端子并在一起）", "星形：U2 V2 W2 短接"],
+    ["KMY 主触点三个下端", "短接在一起（同一节点）", "这就是星点"],
+    ["电机 U2 V2 W2", "KM△ 主触点下端", "三角形接法"],
+    ["KM△ 主触点上端", "分别接 W1、U1、V1（交叉）", "U2→W1、V2→U1、W2→V1"],
+    ["控制回路", "FU2→FR 常闭→SB3 停止→SB1 启动∥KM 自锁", "公共段"],
+    ["节点", "KM 线圈直接接（从启动按钮出线节点）", "启动到运行，KM 一直吸合"],
+    ["KM△ 常闭 21/22", "串在 KMY 线圈回路（前面）", "互锁：KM△ 吸着 KMY 吸不上"],
+    ["SB2 常闭（复合按钮）", "串在 KMY 线圈回路（KM△ 常闭之后）", "按下 SB2 先断 KMY"],
+    ["KMY 线圈 A1", "SB2 常闭出线；A2 回另一相", ""],
+    ["KMY 常闭 21/22", "串在 KM△ 线圈回路", "互锁"],
+    ["SB2 常开（同一按钮）", "接 KM△ 线圈回路，与 KM△ 自锁触点并联", "常闭断完，常开后合"],
+    ["KM△ 线圈 A1", "SB2 常开出线；A2 回另一相", ""]
+  ]
+},
+"06": {
+  img: "img/ans06_s02.png",
+  cap: "软件“接线”页点“答案”画出的实物接线图（原图）",
+  say: "主电路和 05 一模一样，三个接触器接线也一模一样。区别全在控制回路：没有切换按钮，改成时间继电器。KT 的延时断开常闭触点串在 KMY 线圈回路里，延时闭合常开触点串在 KM△ 线圈回路里，同一个继电器保证先断星形、后接三角形。",
+  rows: [
+    ["主电路", "与 05 完全相同：KM 进电源、KMY 短接 U2V2W2、KM△ 接成三角形", "照 05 的接线表接"],
+    ["控制回路", "FU→FR 常闭→SB 停止→SB1 启动∥KM 自锁", "公共段"],
+    ["节点", "KM 线圈直接接", "一直吸合"],
+    ["节点", "KT 线圈直接接", "一启动就计时"],
+    ["KM△ 常闭 21/22", "串在 KMY 回路最前", "互锁"],
+    ["KT 延时断开常闭", "串在 KMY 回路（KM△ 常闭之后）", "时间到它断开，KMY 失电"],
+    ["KMY 线圈 A1", "KT 常闭出线", ""],
+    ["KMY 常闭 21/22", "串在 KM△ 回路", "互锁"],
+    ["KT 延时闭合常开", "串在 KM△ 回路（KMY 常闭之后）", "时间到它闭合，KM△ 得电"],
+    ["KM△ 线圈 A1", "KT 常开出线", ""]
+  ]
+},
+"07": {
+  img: "img/ans07_s02.png",
+  cap: "软件“接线”页点“答案”画出的实物接线图（原图）",
+  say: "控制回路和 01 完全一样，唯一的区别在主电路：电磁抱闸的线圈两个端子，分别接到接触器下端的两相上（也就是电机的那两相）。这样接触器一吸合，电机和抱闸线圈同时得电，闸瓦松开；接触器一断开，两个同时失电，弹簧把闸瓦压紧，电机立即停。",
+  rows: [
+    ["主电路", "QS→FU1→KM 主触点→FR 主触点→电机，与 01 相同", "照 01 的接线表接"],
+    ["抱闸线圈端子 1", "接触器 KM 下端 T2（V 相）", "并接在电机两相上"],
+    ["抱闸线圈端子 2", "接触器 KM 下端 T3（W 相）", "两个端子跨接两相，线圈得到 380V"],
+    ["注意", "抱闸线圈一定要接在 KM 主触点之后（靠电机侧）", "接在前面就会一直通电，松不开闸"],
+    ["控制回路", "与 01 完全相同：FU2→FR 常闭→SB1 停止→SB2 启动∥KM 自锁→KM 线圈", ""]
+  ]
+},
+"08": {
+  img: "",
+  cap: "软件里这个电路没有接线演示页，下面是按原理图整理的接线表",
+  say: "主电路有两个接触器：KM1 直接接，正转；KM2 的出线两相交叉，而且每一相串一个电阻，用来限制反接时的大电流。控制回路的制动支路里串着速度继电器的常开触点，转速低于每分钟 120 转它就断开，制动自动结束。",
+  rows: [
+    ["电源", "QS→FU1→KM1 主触点上端", "正转接触器"],
+    ["KM1 下端 T1 T2 T3", "FR 主触点上端（一一对应）", "正转"],
+    ["FU1 下端", "三个电阻 R 上端", "反接限流电阻"],
+    ["电阻 R 下端", "KM2 主触点上端", ""],
+    ["KM2 下端 T1 T2 T3", "FR 主触点上端（其中两相交叉）", "对调两相＝反接制动"],
+    ["FR 下端", "电机 U V W", ""],
+    ["控制回路", "FU2→FR 常闭→分成三路：SB1 常闭→SB2 启动∥KM1 自锁→KM2 常闭→KM1 线圈", "运行支路"],
+    ["SB1 常开（同一复合按钮）", "与速度继电器 SR 常开串联", "按下 SB1，常闭先断、常开后合"],
+    ["SR 常开出线", "KM1 常闭 21", "互锁"],
+    ["KM1 常闭 22", "KM2 线圈 A1", "制动接触器"],
+    ["SR 速度继电器", "与电机轴同轴连接（不接线，机械连接）", "转速信号靠它"]
+  ]
+},
+"09": {
+  img: "",
+  cap: "软件里这个电路没有接线演示页，下面是按原理图整理的接线表",
+  say: "主电路比别的多一套整流电路：交流经控制变压器 T 降压，再经整流桥变成直流，直流的两个输出经过 KM2 的主触点和可调电阻 RP，接到电机的两相绕组上。控制回路里 KM2 和 KT 同时得电，KT 到时间断开 KM2，制动结束。",
+  rows: [
+    ["电源", "QS→FU1→KM1 主触点上端→下端→FR→电机", "运行通路"],
+    ["交流电源（两相）", "控制变压器 T 一次侧", "给整流电路供电"],
+    ["变压器 T 二次侧", "整流桥交流两个输入端", "降压后再整流"],
+    ["整流桥直流输出 +", "KM2 主触点上端", "直流正极"],
+    ["KM2 主触点下端", "可调电阻 RP 一端", "RP 调制动电流大小"],
+    ["RP 另一端", "电机一相绕组（如 U）", "直流送入定子"],
+    ["整流桥直流输出 −", "电机另一相绕组（如 V）", "直流回路闭合"],
+    ["控制回路", "FU2→FR 常闭→SB1 常闭→SB2 启动∥KM1 自锁→KM2 常闭→KM1 线圈", "运行支路"],
+    ["SB1 常开（同一复合按钮）", "接制动支路：KT 延时断开常闭 → KM1 常闭 → KM2 线圈", "先断交流，再通直流"],
+    ["同一节点", "KT 线圈（与 KM2 回路并联）", "KT 与 KM2 同时得电"]
+  ]
+}
+};
+
+var W = 900, H = 950;
+var cur = "01";
+var voiceOn = true;
+var voices = [];
+var playing = false;
+var stage = document.getElementById("stage");
+var pic = document.getElementById("pic");
+var ring = document.getElementById("ring");
+var nowName = document.getElementById("now-name");
+var nowText = document.getElementById("now-text");
+var listEl = document.getElementById("list");
+var pathsEl = document.getElementById("paths");
+var voiceBtn = document.getElementById("voice");
+var playBtn = document.getElementById("playall");
+
+function loadVoices() { try { voices = window.speechSynthesis.getVoices() || []; } catch (e) { voices = []; } }
+if (window.speechSynthesis) { loadVoices(); window.speechSynthesis.onvoiceschanged = loadVoices; }
+else { voiceBtn.disabled = true; voiceBtn.textContent = "此浏览器不支持朗读"; playBtn.disabled = true; }
+
+function pickVoice() {
+  var zh = [];
+  for (var i = 0; i < voices.length; i += 1) { if (/^zh/i.test(voices[i].lang)) { zh.push(voices[i]); } }
+  var pref = ["Xiaoxiao", "Yunxi", "Yunyang", "Huihui", "Yaoyao", "Kangkang", "Tingting", "Meijia", "Hanhan"];
+  for (var p = 0; p < pref.length; p += 1) {
+    for (var k = 0; k < zh.length; k += 1) { if (zh[k].name.indexOf(pref[p]) >= 0) { return zh[k]; } }
+  }
+  return zh[0] || null;
+}
+
+function speak(name, text, onend) {
+  var fallbackMs = 1200 + (name.length + text.length) * 260;
+  if (!voiceOn || !window.speechSynthesis || typeof SpeechSynthesisUtterance === "undefined" || voices.length === 0) {
+    if (onend) { setTimeout(onend, fallbackMs); }
+    return;
+  }
+  try { window.speechSynthesis.cancel(); } catch (e) {}
+  var done = false;
+  var finish = function () { if (!done && onend) { done = true; onend(); } };
+  var u = new SpeechSynthesisUtterance(name + "。" + text);
+  u.lang = "zh-CN";
+  var v = pickVoice();
+  if (v) { u.voice = v; }
+  u.onend = finish;
+  u.onerror = finish;
+  setTimeout(finish, fallbackMs * 2 + 4000);
+  try { window.speechSynthesis.speak(u); } catch (e) { finish(); }
+}
+
+function stopPlaying() { playing = false; playBtn.textContent = "▶ 从头讲一遍"; if (window.speechSynthesis) { window.speechSynthesis.cancel(); } }
+
+function show(entry, ringAt) {
+  nowName.textContent = entry.name;
+  nowText.textContent = entry.say;
+  var at = ringAt || entry;
+  ring.style.left = (at.x / W * 100) + "%";
+  ring.style.top = (at.y / H * 100) + "%";
+  ring.classList.remove("on");
+  void ring.offsetWidth;
+  ring.classList.add("on");
+  var rows = listEl.querySelectorAll("button");
+  for (var i = 0; i < rows.length; i += 1) { rows[i].classList.toggle("on", entry.n !== undefined && rows[i].getAttribute("data-n") === String(entry.n)); }
+  var prow = pathsEl.querySelectorAll("button");
+  for (var j = 0; j < prow.length; j += 1) { prow[j].classList.toggle("on", entry.path !== undefined && prow[j].getAttribute("data-p") === String(entry.path)); }
+  if (window.innerWidth <= 900) { document.querySelector(".now").scrollIntoView({ behavior: "smooth", block: "nearest" }); }
+}
+
+function select(entry, speakIt) {
+  stopPlaying();
+  show(entry);
+  if (speakIt !== false) { speak(entry.name, entry.say); }
+}
+
+function intro() {
+  stopPlaying();
+  ring.classList.remove("on");
+  nowName.textContent = DATA[cur].intro[0];
+  nowText.textContent = DATA[cur].intro[1];
+  var rows = listEl.querySelectorAll("button");
+  for (var i = 0; i < rows.length; i += 1) { rows[i].classList.remove("on"); }
+  var prow = pathsEl.querySelectorAll("button");
+  for (var j = 0; j < prow.length; j += 1) { prow[j].classList.remove("on"); }
+}
+
+function dist(px, py, x, y) { return Math.sqrt((px - x) * (px - x) + (py - y) * (py - y)); }
+
+function distToPath(px, py, lines) {
+  var best = 1e9;
+  for (var l = 0; l < lines.length; l += 1) {
+    for (var i = 0; i < lines[l].length - 1; i += 1) {
+      var ax = lines[l][i][0], ay = lines[l][i][1], bx = lines[l][i + 1][0], by = lines[l][i + 1][1];
+      var dx = bx - ax, dy = by - ay, len2 = dx * dx + dy * dy;
+      var t = len2 ? ((px - ax) * dx + (py - ay) * dy) / len2 : 0;
+      if (t < 0) { t = 0; } else if (t > 1) { t = 1; }
+      var d = dist(px, py, ax + t * dx, ay + t * dy);
+      if (d < best) { best = d; }
+    }
+  }
+  return best;
+}
+
+function hit(px, py) {
+  var d = DATA[cur], i;
+  for (i = 0; i < d.items.length; i += 1) { if (dist(px, py, d.items[i].bx, d.items[i].by) <= 22) { return d.items[i]; } }
+  for (i = 0; i < d.items.length; i += 1) { if (dist(px, py, d.items[i].x, d.items[i].y) <= 26) { return d.items[i]; } }
+  for (i = 0; i < d.extras.length; i += 1) { if (dist(px, py, d.extras[i].x, d.extras[i].y) <= 36) { return d.extras[i]; } }
+  for (i = 0; i < d.paths.length; i += 1) {
+    if (distToPath(px, py, d.paths[i].pts) <= 11) { return { path: i, name: d.paths[i].name, say: d.paths[i].say, color: d.paths[i].color }; }
+  }
+  var best = null, bestD = 75;
+  for (i = 0; i < d.items.length; i += 1) {
+    var dd = Math.min(dist(px, py, d.items[i].x, d.items[i].y), dist(px, py, d.items[i].bx, d.items[i].by));
+    if (dd < bestD) { bestD = dd; best = d.items[i]; }
+  }
+  for (i = 0; i < d.extras.length; i += 1) {
+    var de = dist(px, py, d.extras[i].x, d.extras[i].y);
+    if (de < bestD) { bestD = de; best = d.extras[i]; }
+  }
+  return best;
+}
+
+function build() {
+  var d = DATA[cur];
+  pic.src = d.img;
+  pic.alt = d.intro[0];
+  listEl.innerHTML = "";
+  pathsEl.innerHTML = "";
+  var i;
+  for (i = 0; i < d.items.length; i += 1) {
+    var li = document.createElement("li");
+    var b = document.createElement("button");
+    b.type = "button";
+    b.setAttribute("data-n", String(d.items[i].n));
+    b.innerHTML = "<b>" + d.items[i].n + "</b>" + d.items[i].name;
+    b.onclick = (function (entry) { return function () { select(entry); }; })(d.items[i]);
+    li.appendChild(b);
+    listEl.appendChild(li);
+  }
+  for (i = 0; i < d.paths.length; i += 1) {
+    var li2 = document.createElement("li");
+    var b2 = document.createElement("button");
+    b2.type = "button";
+    b2.setAttribute("data-p", String(i));
+    b2.innerHTML = '<span class="sw" style="background:' + d.paths[i].color + '"></span>' + d.paths[i].name;
+    b2.onclick = (function (idx) { return function () {
+      var p = DATA[cur].paths[idx];
+      select({ path: idx, name: p.name, say: p.say, color: p.color });
+      ring.classList.remove("on");
+    }; })(i);
+    li2.appendChild(b2);
+    pathsEl.appendChild(li2);
+  }
+  renderWire(d);
+  intro();
+}
+
+function renderWire(d) {
+  var w = WIRE[cur];
+  var box = document.getElementById("wirebox");
+  if (!w) { box.style.display = "none"; return; }
+  box.style.display = "";
+  var img = document.getElementById("wireimg");
+  if (w.img) {
+    img.src = w.img;
+    img.style.display = "";
+  } else {
+    img.removeAttribute("src");
+    img.style.display = "none";
+  }
+  document.getElementById("wirecap").textContent = w.cap || "";
+  var t = document.getElementById("wiretab");
+  var rows = ['<tr><th>从这里</th><th>接到这里</th><th>为什么</th></tr>'];
+  for (var i = 0; i < w.rows.length; i += 1) {
+    rows.push("<tr><td>" + w.rows[i][0] + "</td><td>" + w.rows[i][1] + "</td><td>" + (w.rows[i][2] || "") + "</td></tr>");
+  }
+  t.innerHTML = rows.join("");
+}
+
+function buildTabs() {
+  var nav = document.getElementById("tabs");
+  var keys = Object.keys(DATA);
+  for (var i = 0; i < keys.length; i += 1) {
+    var b = document.createElement("button");
+    b.type = "button";
+    b.textContent = DATA[keys[i]].tab;
+    b.onclick = (function (k) { return function () {
+      stopPlaying();
+      cur = k;
+      var all = nav.querySelectorAll("button");
+      for (var j = 0; j < all.length; j += 1) { all[j].classList.toggle("on", j === Object.keys(DATA).indexOf(k)); }
+      build();
+    }; })(keys[i]);
+    if (keys[i] === cur) { b.classList.add("on"); }
+    nav.appendChild(b);
+  }
+}
+
+stage.addEventListener("click", function (e) {
+  var r = pic.getBoundingClientRect();
+  var px = (e.clientX - r.left) * W / r.width;
+  var py = (e.clientY - r.top) * H / r.height;
+  var entry = hit(px, py);
+  if (entry) { select(entry); }
+  else {
+    stopPlaying();
+    ring.classList.remove("on");
+    nowName.textContent = "这里没有元件";
+    nowText.textContent = "点黄色的编号圆圈，或者图里的触点、按钮、线圈、彩线。";
+  }
+});
+
+voiceBtn.onclick = function () {
+  voiceOn = !voiceOn;
+  voiceBtn.textContent = voiceOn ? "🔊 朗读：开" : "🔇 朗读：关";
+  voiceBtn.classList.toggle("off", !voiceOn);
+  if (!voiceOn && window.speechSynthesis) { window.speechSynthesis.cancel(); }
+};
+
+playBtn.onclick = function () {
+  if (playing) { stopPlaying(); return; }
+  playing = true;
+  playBtn.textContent = "■ 停止";
+  var items = DATA[cur].items;
+  var idx = 0;
+  var step = function () {
+    if (!playing || idx >= items.length) { stopPlaying(); return; }
+    show(items[idx]);
+    speak(items[idx].name, items[idx].say, function () { idx += 1; step(); });
+  };
+  step();
+};
+
+buildTabs();
+build();
+
+document.getElementById("wiresay").onclick = function () {
+  var w = WIRE[cur];
+  if (!w) { return; }
+  stopPlaying();
+  show({ name: DATA[cur].intro[0] + " 的实物接线", say: w.say });
+  speak("实物接线", w.say);
+};
+
+var zoomBox = document.getElementById("zoom");
+document.getElementById("wireimg").onclick = function () {
+  var src = this.getAttribute("src");
+  if (!src) { return; }
+  document.getElementById("zoomimg").src = src;
+  zoomBox.classList.add("on");
+};
+zoomBox.onclick = function () { zoomBox.classList.remove("on"); };
+</script>
+</body>
+</html>
